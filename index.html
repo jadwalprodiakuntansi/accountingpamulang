@@ -176,13 +176,27 @@ async function download(){
         const dataEnd=row-1;
         if(dataEnd>=tableStart){
           const tableName='T_'+reg+'_'+String(cls.code).replace(/[^A-Za-z0-9_]/g,'_')+'_'+index;
+          // ExcelJS mewajibkan definisi rows saat membuat Table.
+          // Gunakan data yang sama dengan yang sudah ditulis ke worksheet,
+          // sehingga tabel Excel benar-benar terbentuk tanpa error.
           ws.addTable({
             name:tableName,
             ref:'A'+tableStart+':I'+dataEnd,
             headerRow:true,
             totalsRow:false,
             style:{theme:'TableStyleMedium2',showFirstColumn:false,showLastColumn:false,showRowStripes:true,showColumnStripes:false},
-            columns:headers.map(name=>({name}))
+            columns:headers.map(name=>({name})),
+            rows:cls.data.map(r=>[
+              r.semester,
+              r.no,
+              r.mataKuliah,
+              r.sks,
+              r.ruang,
+              r.hari,
+              r.jamKe,
+              r.waktu,
+              r.dosen
+            ])
           });
         }
 
