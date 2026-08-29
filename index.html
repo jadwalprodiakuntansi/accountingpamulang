@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<div class="header"><h1>Pengolah Jadwal Prodi Akuntansi</h1><p>1 kelas = 1 tabel • Semester otomatis dari kode kelas • Download Excel per kelas</p></div>
+<div class="header"><h1>Pengolah Jadwal Prodi Akuntansi</h1><p>1 kelas = 1 tabel • Semester otomatis dari kode kelas • Download Excel per reguler</p></div>
 <div class="container">
 <div class="card">
 <h2>1. Upload File Excel</h2>
@@ -70,7 +70,75 @@ function fillKelas(){const reg=regEl.value,list=reg==='ALL'?classes:classes.filt
 function tableHTML(cls){let h='<div class="table-card"><div class="title">'+esc(regName(cls.reg))+' '+esc(cls.code)+'</div><div class="subtitle">Semester <b>'+esc(cls.semester)+'</b> • '+cls.data.length+' mata kuliah</div>';if(!cls.data.length)return h+'<div class="empty">Belum ada mata kuliah yang terisi untuk kelas ini pada data Excel.</div></div>';h+='<table><thead><tr><th>SEMESTER</th><th>NO</th><th>MATA KULIAH</th><th>SKS</th><th>RUANG</th><th>HARI / KETERANGAN</th><th>JAM KE</th><th>WAKTU</th><th>DOSEN PENGAMPU</th></tr></thead><tbody>';cls.data.forEach(r=>{h+='<tr><td class="center">'+esc(r.semester)+'</td><td class="center">'+esc(r.no)+'</td><td>'+esc(r.mataKuliah)+'</td><td class="center">'+esc(r.sks)+'</td><td>'+esc(r.ruang)+'</td><td>'+esc(r.hari)+'</td><td class="center">'+esc(r.jamKe)+'</td><td>'+esc(r.waktu)+'</td><td>'+esc(r.dosen)+'</td></tr>'});return h+'</tbody></table></div>'}
 function show(){const reg=regEl.value,mode=modeEl.value,key=kelasEl.value;if(mode==='single'&&!key){statusEl.innerHTML='<div class="error">Pilih kode kelas dulu.</div>';return}shown=mode==='single'?classes.filter(x=>(x.reg+'|'+x.code)===key):(reg==='ALL'?classes:classes.filter(x=>x.reg===reg));if(!shown.length){statusEl.innerHTML='<div class="error">Data tidak ditemukan.</div>';hasilEl.innerHTML='';downloadEl.disabled=true;return}const total=shown.reduce((n,x)=>n+x.data.length,0);statusEl.innerHTML='<div class="success"><b>'+shown.length+' kelas</b> ditampilkan sebagai <b>'+shown.length+' tabel terpisah</b>. Total <b>'+total+'</b> mata kuliah terbaca.</div>';hasilEl.innerHTML='<div class="summary">Hasil Jadwal</div>'+shown.map(tableHTML).join('');downloadEl.disabled=false;window.scrollTo({top:hasilEl.offsetTop-20,behavior:'smooth'})}
 function safeSheetName(name,used){let base=name.replace(/[\\\/\?\*\[\]:]/g,' ').slice(0,31).trim()||'Kelas',out=base,n=2;while(used.has(out)){const s=' ('+n+++')';out=base.slice(0,31-s.length)+s}used.add(out);return out}
-function download(){if(!shown.length)return;const out=XLSX.utils.book_new(),used=new Set();shown.forEach(cls=>{const rows=[[regName(cls.reg)+' '+cls.code],['SEMESTER','NO','MATA KULIAH','SKS','RUANG','HARI / KETERANGAN','JAM KE','WAKTU','DOSEN PENGAMPU']];cls.data.forEach(r=>rows.push([r.semester,r.no,r.mataKuliah,r.sks,r.ruang,r.hari,r.jamKe,r.waktu,r.dosen]));const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:10},{wch:7},{wch:35},{wch:8},{wch:15},{wch:20},{wch:8},{wch:20},{wch:30}];XLSX.utils.book_append_sheet(out,ws,safeSheetName(cls.reg+' '+cls.code,used))});XLSX.writeFile(out,'Jadwal_Prodi_Akuntansi.xlsx')}
+function download(){
+  if(!shown.length)return;
+
+  const out=XLSX.utils.book_new();
+  const groups={A:[],B:[],CS:[]};
+
+  shown.forEach(cls=>{
+    if(groups[cls.reg]) groups[cls.reg].push(cls);
+  });
+
+  const widths=[
+    {wch:10},{wch:7},{wch:35},{wch:8},{wch:15},
+    {wch:20},{wch:8},{wch:20},{wch:30}
+  ];
+
+  ['A','B','CS'].forEach(reg=>{
+    const list=groups[reg];
+    if(!list.length)return;
+
+    const rows=[];
+    let merges=[];
+    let row=0;
+
+    list.forEach((cls,index)=>{
+      // Judul setiap kelas
+      rows.push([regName(cls.reg)+' '+cls.code]);
+      merges.push({s:{r:row,c:0},e:{r:row,c:8}});
+      row++;
+
+      rows.push(['SEMESTER','NO','MATA KULIAH','SKS','RUANG','HARI / KETERANGAN','JAM KE','WAKTU','DOSEN PENGAMPU']);
+      row++;
+
+      if(cls.data.length){
+        cls.data.forEach(r=>{
+          rows.push([
+            r.semester,r.no,r.mataKuliah,r.sks,r.ruang,
+            r.hari,r.jamKe,r.waktu,r.dosen
+          ]);
+          row++;
+        });
+      }else{
+        rows.push([cls.semester,'','','','','','','','Belum ada mata kuliah']);
+        row++;
+      }
+
+      // 2 baris kosong sebagai pemisah antar tabel kelas
+      if(index<list.length-1){
+        rows.push([]);
+        rows.push([]);
+        row+=2;
+      }
+    });
+
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=widths;
+    ws['!merges']=merges;
+
+    // Freeze pane di awal sheet
+    ws['!freeze']={xSplit:0,ySplit:0};
+
+    XLSX.utils.book_append_sheet(
+      out,
+      ws,
+      reg==='A'?'Reg A':reg==='B'?'Reg B':'Reg C-CS'
+    );
+  });
+
+  XLSX.writeFile(out,'Jadwal_Prodi_Akuntansi.xlsx');
+}
 fileEl.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;fileStatus.innerHTML='<div class="info">Sedang membaca Excel...</div>';const reader=new FileReader();reader.onload=ev=>{try{wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});classes=parseAll();regEl.innerHTML='<option value="ALL">Semua Reguler</option><option value="A">Reg A</option><option value="B">Reg B</option><option value="CS">Reg C / CS</option>';regEl.disabled=false;modeEl.disabled=false;modeEl.value='all';regEl.value='ALL';fillKelas();const a=classes.filter(x=>x.reg==='A').length,b=classes.filter(x=>x.reg==='B').length,c=classes.filter(x=>x.reg==='CS').length;fileStatus.innerHTML='<div class="success">File berhasil dibaca. Terdeteksi <b>'+classes.length+' kelas</b>: Reg A <b>'+a+'</b>, Reg B <b>'+b+'</b>, Reg C/CS <b>'+c+'</b>.</div>';statusEl.innerHTML='<div class="info">Pilih reguler dan mode tampilan, lalu klik <b>Tampilkan Jadwal</b>.</div>'}catch(err){console.error(err);fileStatus.innerHTML='<div class="error">Excel gagal dibaca: '+esc(err.message)+'</div>'}};reader.readAsArrayBuffer(f)});
 regEl.addEventListener('change',fillKelas);modeEl.addEventListener('change',()=>{fillKelas();});showEl.addEventListener('click',show);downloadEl.addEventListener('click',download);
 </script>
