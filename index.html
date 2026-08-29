@@ -1,890 +1,997 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Pengolah Jadwal Prodi Akuntansi</title>
+<title>Pengolah Jadwal Prodi Akuntansi</title>
 
-  <!-- Library untuk membaca Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* {
+    box-sizing: border-box;
+}
 
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #f3f6fa;
-      color: #111827;
-    }
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f5f9;
+    color: #111827;
+}
 
-    .header {
-      background: #111827;
-      color: white;
-      padding: 40px 20px;
-      text-align: center;
+.header {
+    background: #111827;
+    color: white;
+    text-align: center;
+    padding: 35px 20px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 34px;
+}
+
+.header p {
+    margin-top: 12px;
+    font-size: 20px;
+    color: #d1d5db;
+}
+
+.container {
+    max-width: 1450px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    margin-bottom: 30px;
+    border-radius: 18px;
+    box-shadow: 0 5px 20px rgba(0,0,0,.08);
+}
+
+h2 {
+    margin-top: 0;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+input,
+select,
+button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    font-size: 16px;
+}
+
+select {
+    background: white;
+}
+
+button {
+    background: #111827;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+}
+
+button:hover {
+    background: #1f2937;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.success {
+    background: #dcfce7;
+    color: #166534;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.error {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.table-card {
+    overflow-x: auto;
+}
+
+.jadwal-title {
+    text-align: center;
+    font-size: 30px;
+    font-weight: bold;
+    margin-bottom: 25px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+th {
+    background: #111827;
+    color: white;
+    padding: 18px;
+    text-align: center;
+}
+
+td {
+    padding: 17px;
+    border: 1px solid #d1d5db;
+}
+
+td:first-child {
+    text-align: center;
+    width: 70px;
+}
+
+.no-data {
+    text-align: center;
+    padding: 30px;
+    color: #6b7280;
+}
+
+@media(max-width: 800px) {
+    .grid {
+        grid-template-columns: 1fr;
     }
 
     .header h1 {
-      margin: 0 0 10px;
-      font-size: 32px;
-    }
-
-    .header p {
-      margin: 0;
-      color: #d1d5db;
-      font-size: 18px;
-    }
-
-    .container {
-      width: min(1400px, 94%);
-      margin: 35px auto;
-    }
-
-    .card {
-      background: white;
-      border-radius: 18px;
-      padding: 28px;
-      margin-bottom: 25px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.07);
-    }
-
-    h2 {
-      margin-top: 0;
-      font-size: 24px;
-    }
-
-    .upload-area {
-      border: 2px dashed #b8bdc7;
-      border-radius: 15px;
-      padding: 30px;
-      text-align: center;
-      cursor: pointer;
-    }
-
-    input[type="file"] {
-      font-size: 16px;
-      margin-bottom: 15px;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
-
-    select {
-      width: 100%;
-      padding: 14px;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      font-size: 16px;
-      background: white;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 14px 22px;
-      border: none;
-      border-radius: 10px;
-      background: #111827;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #1f2937;
-    }
-
-    .success {
-      background: #dcfce7;
-      color: #166534;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 15px;
-    }
-
-    .error {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 15px;
-    }
-
-    .result-title {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 900px;
-    }
-
-    th {
-      background: #111827;
-      color: white;
-      padding: 15px 12px;
-      border: 1px solid #d1d5db;
-      text-align: center;
-    }
-
-    td {
-      padding: 13px 12px;
-      border: 1px solid #d1d5db;
-      background: white;
-    }
-
-    td:first-child {
-      text-align: center;
-      width: 60px;
-    }
-
-    .empty {
-      text-align: center;
-      color: #6b7280;
-      padding: 30px;
-    }
-
-    @media (max-width: 700px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .header h1 {
         font-size: 25px;
-      }
-
-      .card {
-        padding: 20px;
-      }
     }
-  </style>
+}
+</style>
 </head>
 
 <body>
 
-  <div class="header">
+<div class="header">
     <h1>Pengolah Jadwal Prodi Akuntansi</h1>
     <p>Otomatis mengolah data kelas, mata kuliah, dan dosen</p>
-  </div>
+</div>
 
-  <div class="container">
+<div class="container">
 
     <!-- UPLOAD -->
     <div class="card">
-      <h2>1. Upload File Excel</h2>
 
-      <div class="upload-area">
+        <h2>1. Upload File Excel</h2>
+
         <input
-          type="file"
-          id="excelFile"
-          accept=".xlsx,.xls"
+            type="file"
+            id="excelFile"
+            accept=".xlsx,.xls"
         >
 
-        <div id="uploadStatus"></div>
-      </div>
+        <div id="fileStatus"></div>
+
     </div>
+
 
     <!-- PILIH KELAS -->
     <div class="card">
 
-      <h2>2. Pilih Kelas</h2>
+        <h2>2. Pilih Kelas</h2>
 
-      <div class="form-grid">
+        <div class="grid">
 
-        <div>
-          <label for="sheetSelect">Program / Sheet</label>
+            <div>
+                <label>Sheet</label>
 
-          <select id="sheetSelect" disabled>
-            <option value="">Upload Excel terlebih dahulu</option>
-          </select>
+                <select id="sheetSelect">
+                    <option value="">Pilih sheet</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Kode Kelas</label>
+
+                <select id="classSelect">
+                    <option value="">Pilih kode kelas</option>
+                </select>
+            </div>
+
         </div>
 
-        <div>
-          <label for="classSelect">Kode Kelas</label>
+        <br>
 
-          <select id="classSelect" disabled>
-            <option value="">Pilih kode kelas</option>
-          </select>
-        </div>
+        <button id="showButton">
+            Tampilkan Jadwal
+        </button>
 
-      </div>
-
-      <button id="showButton" disabled>
-        Tampilkan Jadwal
-      </button>
-
-      <div id="message"></div>
+        <div id="classStatus"></div>
 
     </div>
+
 
     <!-- HASIL -->
-    <div class="card" id="resultCard" style="display:none;">
+    <div id="result"></div>
 
-      <div class="result-title">
-        <h2 id="resultTitle"></h2>
-      </div>
-
-      <div class="table-wrapper">
-
-        <table>
-
-          <thead>
-            <tr>
-              <th>NO</th>
-              <th>MATA KULIAH</th>
-              <th>SKS</th>
-              <th>RUANG</th>
-              <th>HARI</th>
-              <th>WAKTU</th>
-              <th>DOSEN PENGAMPU</th>
-            </tr>
-          </thead>
-
-          <tbody id="resultBody"></tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-  </div>
+</div>
 
 
 <script>
 
-  let workbook = null;
-  let currentData = {};
-  let currentSheet = "";
-
-  const excelFile = document.getElementById("excelFile");
-  const sheetSelect = document.getElementById("sheetSelect");
-  const classSelect = document.getElementById("classSelect");
-  const showButton = document.getElementById("showButton");
-  const uploadStatus = document.getElementById("uploadStatus");
-  const message = document.getElementById("message");
-  const resultCard = document.getElementById("resultCard");
-  const resultTitle = document.getElementById("resultTitle");
-  const resultBody = document.getElementById("resultBody");
+let workbook = null;
+let currentSheetData = [];
+let currentCodes = [];
 
 
-  /*
-   * ==========================================
-   * 1. UPLOAD EXCEL
-   * ==========================================
-   */
+// =====================================================
+// UPLOAD EXCEL
+// =====================================================
 
-  excelFile.addEventListener("change", async function(event) {
+document.getElementById("excelFile").addEventListener("change", function(e) {
 
-    const file = event.target.files[0];
+    const file = e.target.files[0];
 
     if (!file) return;
 
-    try {
+    const reader = new FileReader();
 
-      uploadStatus.innerHTML =
-        `<div class="success">Sedang membaca file...</div>`;
+    reader.onload = function(event) {
 
-      const arrayBuffer = await file.arrayBuffer();
+        try {
 
-      workbook = XLSX.read(arrayBuffer, {
-        type: "array"
-      });
+            const data = new Uint8Array(event.target.result);
 
-      /*
-       * Kita hanya gunakan sheet jadwal.
-       * Cek Dosen, Sheet1, dan Sheet4 tidak digunakan.
-       */
+            workbook = XLSX.read(data, {
+                type: "array",
+                cellDates: true
+            });
 
-      const allowedSheets = [
-        "Reg A",
-        "Reg B",
-        "Reg CS"
-      ];
+            const sheetSelect =
+                document.getElementById("sheetSelect");
 
-      const availableSheets = workbook.SheetNames.filter(
-        name => allowedSheets.includes(name)
-      );
+            sheetSelect.innerHTML =
+                '<option value="">Pilih sheet</option>';
 
-      if (availableSheets.length === 0) {
+            workbook.SheetNames.forEach(function(sheetName) {
 
-        uploadStatus.innerHTML =
-          `<div class="error">
-            Sheet Reg A / Reg B / Reg CS tidak ditemukan.
-          </div>`;
+                const option =
+                    document.createElement("option");
 
-        return;
-      }
+                option.value = sheetName;
+                option.textContent = sheetName;
 
-      /*
-       * Masukkan sheet ke dropdown
-       */
+                sheetSelect.appendChild(option);
 
-      sheetSelect.innerHTML =
-        `<option value="">Pilih program</option>`;
+            });
 
-      availableSheets.forEach(sheetName => {
+            document.getElementById("fileStatus").innerHTML =
+                '<div class="success">File berhasil dibaca. Pilih sheet untuk melanjutkan.</div>';
 
-        const option = document.createElement("option");
+        } catch (error) {
 
-        option.value = sheetName;
-        option.textContent = sheetName;
+            document.getElementById("fileStatus").innerHTML =
+                '<div class="error">File Excel gagal dibaca.</div>';
 
-        sheetSelect.appendChild(option);
+            console.error(error);
+        }
 
-      });
+    };
 
-      sheetSelect.disabled = false;
+    reader.readAsArrayBuffer(file);
 
-      uploadStatus.innerHTML =
-        `<div class="success">
-          File berhasil dibaca. Pilih program dan kode kelas.
-        </div>`;
-
-      /*
-       * Reset
-       */
-
-      classSelect.innerHTML =
-        `<option value="">Pilih kode kelas</option>`;
-
-      classSelect.disabled = true;
-
-      showButton.disabled = true;
-
-      resultCard.style.display = "none";
-
-    }
-
-    catch (error) {
-
-      console.error(error);
-
-      uploadStatus.innerHTML =
-        `<div class="error">
-          File gagal dibaca.
-        </div>`;
-
-    }
-
-  });
+});
 
 
-  /*
-   * ==========================================
-   * 2. CARI SEMUA KODE KELAS
-   * ==========================================
-   */
+// =====================================================
+// PILIH SHEET
+// =====================================================
 
-  sheetSelect.addEventListener("change", function() {
+document.getElementById("sheetSelect").addEventListener("change", function() {
 
     const sheetName = this.value;
 
-    if (!sheetName) {
+    const classSelect =
+        document.getElementById("classSelect");
 
-      classSelect.disabled = true;
-      showButton.disabled = true;
+    classSelect.innerHTML =
+        '<option value="">Pilih kode kelas</option>';
 
-      return;
-    }
+    document.getElementById("classStatus").innerHTML = "";
 
-    currentSheet = sheetName;
+    if (!sheetName || !workbook) return;
 
-    const worksheet = workbook.Sheets[sheetName];
 
-    /*
-     * Ambil seluruh sheet sebagai array.
-     */
+    const worksheet =
+        workbook.Sheets[sheetName];
 
-    const data = XLSX.utils.sheet_to_json(
-      worksheet,
-      {
-        header: 1,
-        defval: ""
-      }
-    );
-
-    currentData = {
-      data: data,
-      sheet: sheetName
-    };
 
     /*
-     * Cari kode kelas di seluruh sheet.
-     *
-     * Contoh:
-     * 01AKSP001
-     * 01AKSP002
-     * 01AKSM001
-     * 01AKSE001
-     */
+        IMPORTANT:
+
+        Header=1 membuat kita mendapatkan
+        ARRAY BARIS MURNI.
+
+        Jadi tidak tergantung nama kolom
+        dan tidak terganggu oleh merged cell.
+    */
+
+    currentSheetData =
+        XLSX.utils.sheet_to_json(
+            worksheet,
+            {
+                header: 1,
+                defval: "",
+                raw: false
+            }
+        );
+
+
+    currentCodes =
+        findClassCodes(currentSheetData);
+
+
+    currentCodes.forEach(function(code) {
+
+        const option =
+            document.createElement("option");
+
+        option.value = code;
+        option.textContent = code;
+
+        classSelect.appendChild(option);
+
+    });
+
+
+    document.getElementById("classStatus").innerHTML =
+        '<div class="success">' +
+        currentCodes.length +
+        ' kode kelas ditemukan.' +
+        '</div>';
+
+});
+
+
+// =====================================================
+// CARI KODE KELAS
+// =====================================================
+
+function findClassCodes(rows) {
 
     const codes = [];
 
-    data.forEach(row => {
+    /*
+       Format kode yang kita cari:
 
-      row.forEach(cell => {
+       01AKSP001
+       01AKSP002
+       02AKSP001
+       dst.
 
-        if (cell === null || cell === undefined) {
-          return;
-        }
+       Jadi bukan mengambil semua angka,
+       tetapi harus ada pola:
+       01AKSP001
+    */
 
-        const text = String(cell).trim();
+    const regex = /\b\d{2}AKSP\d{3}\b/gi;
 
-        /*
-         * Format kode:
-         * angka + AKS + huruf + angka
-         */
 
-        if (/^\d{2}\s?AKS[A-Z]\d{3}$/i.test(text)) {
+    rows.forEach(function(row) {
 
-          const cleanCode =
-            text.replace(/\s+/g, "").toUpperCase();
+        row.forEach(function(cell) {
 
-          if (!codes.includes(cleanCode)) {
-            codes.push(cleanCode);
-          }
+            if (cell === null || cell === undefined) {
+                return;
+            }
 
-        }
+            const text =
+                String(cell).trim();
 
-      });
+            const matches =
+                text.match(regex);
+
+            if (matches) {
+
+                matches.forEach(function(code) {
+
+                    code = code.toUpperCase();
+
+                    if (!codes.includes(code)) {
+                        codes.push(code);
+                    }
+
+                });
+
+            }
+
+        });
 
     });
 
-    /*
-     * Urutkan kode
-     */
 
-    codes.sort((a,b) =>
-      a.localeCompare(b, undefined, {
-        numeric: true
-      })
-    );
-
-    /*
-     * Masukkan ke dropdown
-     */
-
-    classSelect.innerHTML =
-      `<option value="">Pilih kode kelas</option>`;
-
-    codes.forEach(code => {
-
-      const option = document.createElement("option");
-
-      option.value = code;
-      option.textContent = code;
-
-      classSelect.appendChild(option);
-
-    });
-
-    classSelect.disabled = false;
-
-    showButton.disabled = true;
-
-    message.innerHTML =
-      `<div class="success">
-        ${codes.length} kode kelas ditemukan.
-      </div>`;
-
-  });
+    return codes;
+}
 
 
-  /*
-   * ==========================================
-   * 3. AKTIFKAN TOMBOL
-   * ==========================================
-   */
+// =====================================================
+// TAMPILKAN JADWAL
+// =====================================================
 
-  classSelect.addEventListener("change", function() {
+document.getElementById("showButton").addEventListener("click", function() {
 
-    showButton.disabled = !this.value;
+    const code =
+        document.getElementById("classSelect").value;
 
-  });
+    if (!code) {
 
-
-  /*
-   * ==========================================
-   * 4. TAMPILKAN JADWAL
-   * ==========================================
-   */
-
-  showButton.addEventListener("click", function() {
-
-    const code = classSelect.value;
-
-    if (!code) return;
-
-    try {
-
-      const jadwal = ambilDataKelas(
-        currentData.data,
-        code
-      );
-
-      if (jadwal.length === 0) {
-
-        message.innerHTML =
-          `<div class="error">
-            Data mata kuliah untuk ${code} tidak ditemukan.
-          </div>`;
-
-        resultCard.style.display = "none";
+        document.getElementById("classStatus").innerHTML =
+            '<div class="error">Silakan pilih kode kelas terlebih dahulu.</div>';
 
         return;
-      }
-
-      tampilkanJadwal(
-        code,
-        jadwal
-      );
-
-      message.innerHTML =
-        `<div class="success">
-          ${jadwal.length} mata kuliah ditemukan untuk ${code}.
-        </div>`;
-
     }
 
-    catch (error) {
 
-      console.error(error);
+    const result =
+        parseClassSchedule(
+            currentSheetData,
+            code
+        );
 
-      message.innerHTML =
-        `<div class="error">
-          Terjadi kesalahan saat mengolah data.
-          Silakan lihat Console untuk detail.
-        </div>`;
 
+    if (!result) {
+
+        document.getElementById("classStatus").innerHTML =
+            '<div class="error">' +
+            'Kode kelas ' +
+            code +
+            ' tidak ditemukan di sheet ini.' +
+            '</div>';
+
+        document.getElementById("result").innerHTML = "";
+
+        return;
     }
 
-  });
+
+    document.getElementById("classStatus").innerHTML =
+        '<div class="success">' +
+        result.data.length +
+        ' mata kuliah ditemukan untuk kelas ' +
+        code +
+        '.</div>';
 
 
-  /*
-   * ==========================================
-   * 5. FUNGSI UTAMA MENGAMBIL DATA
-   * ==========================================
-   *
-   * STRUKTUR FILE KAMU:
-   *
-   * DOSEN
-   * MATA KULIAH
-   * DOSEN
-   * MATA KULIAH
-   * DOSEN
-   * MATA KULIAH
-   *
-   * Jadi kita TIDAK memisahkan daftar
-   * dosen dan mata kuliah.
-   *
-   * Kita pertahankan urutan aslinya.
-   *
-   */
+    displaySchedule(code, result.data);
 
-  function ambilDataKelas(data, targetCode) {
+});
 
-    let posisiKode = null;
 
-    /*
-     * Cari posisi kode kelas
-     */
+// =====================================================
+// PARSER UTAMA
+// =====================================================
 
-    for (let r = 0; r < data.length; r++) {
+function parseClassSchedule(rows, code) {
 
-      for (let c = 0; c < data[r].length; c++) {
+    const targetCode =
+        code.toUpperCase();
 
-        const cell = String(
-          data[r][c] ?? ""
-        ).trim()
-        .replace(/\s+/g, "")
-        .toUpperCase();
 
-        if (cell === targetCode) {
+    // -----------------------------------------------
+    // 1. CARI BARIS JUDUL KELAS
+    // -----------------------------------------------
 
-          posisiKode = {
-            row: r,
-            col: c
-          };
+    let titleRow = -1;
 
-          break;
+
+    for (let i = 0; i < rows.length; i++) {
+
+        const rowText =
+            rows[i]
+                .map(x => String(x))
+                .join(" ")
+                .toUpperCase();
+
+
+        if (rowText.includes(targetCode)) {
+
+            titleRow = i;
+            break;
 
         }
 
-      }
-
-      if (posisiKode) break;
-
     }
 
-    if (!posisiKode) {
-      return [];
+
+    if (titleRow === -1) {
+        return null;
     }
 
-    const col = posisiKode.col;
-    const startRow = posisiKode.row + 1;
 
-    /*
-     * Ambil seluruh isi kolom kode
-     * setelah header kode.
-     *
-     * Kita sengaja TIDAK berhenti pada
-     * baris kosong karena dalam file kamu
-     * ada jeda/baris kosong.
-     */
+    // -----------------------------------------------
+    // 2. CARI BARIS HEADER
+    // -----------------------------------------------
 
-    const values = [];
+    let headerRow = -1;
+
 
     for (
-      let r = startRow;
-      r < data.length;
-      r++
+        let i = titleRow + 1;
+        i < Math.min(titleRow + 8, rows.length);
+        i++
     ) {
-
-      const value = data[r][col];
-
-      if (
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== ""
-      ) {
 
         const text =
-          String(value).trim();
+            rows[i]
+                .map(x => String(x).trim().toUpperCase());
 
-        /*
-         * Kalau ketemu kode kelas lain,
-         * berarti sudah masuk kolom/blok
-         * kelas berikutnya.
-         */
 
-        const normalized =
-          text.replace(/\s+/g, "")
-              .toUpperCase();
+        const hasNo =
+            text.includes("NO");
 
-        if (
-          /^\d{2}AKS[A-Z]\d{3}$/.test(normalized) &&
-          normalized !== targetCode
-        ) {
-          break;
+        const hasMataKuliah =
+            text.some(x =>
+                x.includes("MATA KULIAH")
+            );
+
+        if (hasNo && hasMataKuliah) {
+
+            headerRow = i;
+            break;
+
         }
-
-        /*
-         * Abaikan tulisan DOSEN / MATAKULIAH
-         */
-
-        if (
-          text.toUpperCase() ===
-          "DOSEN / MATAKULIAH"
-        ) {
-          continue;
-        }
-
-        values.push(text);
-
-      }
 
     }
 
 
-    /*
-     * Sekarang values bentuknya:
-     *
-     * [
-     *   EUIS,
-     *   MATEMATIKA,
-     *   INRINOFITA,
-     *   PANCASILA,
-     *   YULI,
-     *   AGAMA,
-     *   ...
-     * ]
-     *
-     * Jadi pasangan:
-     *
-     * index 0 = DOSEN
-     * index 1 = MATA KULIAH
-     *
-     * index 2 = DOSEN
-     * index 3 = MATA KULIAH
-     *
-     */
+    if (headerRow === -1) {
 
-    const hasil = [];
+        /*
+           Kalau header tidak ketemu,
+           tetap coba asumsi:
+
+           title
+           header
+           data
+        */
+
+        headerRow = titleRow + 1;
+
+    }
+
+
+    // -----------------------------------------------
+    // 3. TENTUKAN POSISI KOLOM
+    // -----------------------------------------------
+
+    const header =
+        rows[headerRow].map(x =>
+            String(x)
+                .trim()
+                .toUpperCase()
+        );
+
+
+    let noCol =
+        header.findIndex(x => x === "NO");
+
+    let mataCol =
+        header.findIndex(x =>
+            x.includes("MATA KULIAH")
+        );
+
+    let sksCol =
+        header.findIndex(x =>
+            x === "SKS"
+        );
+
+    let ruangCol =
+        header.findIndex(x =>
+            x === "RUANG"
+        );
+
+    let hariCol =
+        header.findIndex(x =>
+            x === "HARI"
+        );
+
+    let waktuCol =
+        header.findIndex(x =>
+            x === "WAKTU"
+        );
+
+    let dosenCol =
+        header.findIndex(x =>
+            x.includes("DOSEN")
+        );
+
+
+    /*
+       Kalau header terbaca normal,
+       posisi kolomnya akan:
+
+       NO       = 0
+       MATA     = 1
+       SKS      = 2
+       RUANG    = 3
+       HARI     = 4
+       WAKTU    = 5
+       DOSEN    = 6
+    */
+
+    if (noCol === -1) noCol = 0;
+    if (mataCol === -1) mataCol = 1;
+    if (sksCol === -1) sksCol = 2;
+    if (ruangCol === -1) ruangCol = 3;
+    if (hariCol === -1) hariCol = 4;
+    if (waktuCol === -1) waktuCol = 5;
+    if (dosenCol === -1) dosenCol = 6;
+
+
+    // -----------------------------------------------
+    // 4. BACA DATA
+    // -----------------------------------------------
+
+    const data = [];
+
 
     for (
-      let i = 0;
-      i + 1 < values.length;
-      i += 2
+        let i = headerRow + 1;
+        i < rows.length;
+        i++
     ) {
 
-      const dosen = values[i];
-      const mataKuliah = values[i + 1];
+        const row =
+            rows[i];
 
-      /*
-       * Jangan masukkan data aneh
-       */
 
-      if (
-        !dosen ||
-        !mataKuliah
-      ) {
-        continue;
-      }
+        // -------------------------------------------
+        // CEK APAKAH SUDAH MASUK KELAS BERIKUTNYA
+        // -------------------------------------------
 
-      /*
-       * Hindari header / tulisan yang bukan
-       * data mata kuliah.
-       */
+        const rowText =
+            row
+                .map(x => String(x))
+                .join(" ")
+                .toUpperCase();
 
-      if (
-        mataKuliah.toUpperCase()
-          .includes("DOSEN / MATAKULIAH")
-      ) {
-        continue;
-      }
 
-      hasil.push({
+        const nextCode =
+            rowText.match(/\b\d{2}AKSP\d{3}\b/i);
 
-        mataKuliah: mataKuliah,
 
-        dosen: dosen,
+        if (
+            nextCode &&
+            nextCode[0].toUpperCase() !== targetCode
+        ) {
+            break;
+        }
 
-        sks: "",
 
-        ruang: "",
+        // -------------------------------------------
+        // INI BAGIAN PALING PENTING
+        // -------------------------------------------
+        //
+        // HANYA BACA BARIS YANG KOLOM NO-NYA
+        // MEMANG ANGKA.
+        //
+        // Jadi:
+        //
+        // 1 MATEMATIKA
+        // 2 PANCASILA
+        // ...
+        // 8 ECONOMIC
+        //
+        // MASUK.
+        //
+        // Tetapi:
+        //
+        // 08.50 - 10.30
+        // 13.00 - 14.40
+        //
+        // TIDAK MASUK karena kolom NO kosong.
+        // -------------------------------------------
 
-        hari: "",
 
-        waktu: ""
+        const noValue =
+            String(
+                row[noCol] ?? ""
+            ).trim();
 
-      });
+
+        if (!/^\d+$/.test(noValue)) {
+
+            /*
+               Kalau baris benar-benar kosong,
+               dan kita sudah mendapatkan data,
+               kemungkinan besar blok selesai.
+            */
+
+            const adaIsi =
+                row.some(x =>
+                    String(x).trim() !== ""
+                );
+
+            if (!adaIsi && data.length > 0) {
+                break;
+            }
+
+            continue;
+        }
+
+
+        const nomor =
+            parseInt(noValue, 10);
+
+
+        /*
+           Nomor mata kuliah normal.
+           Kita batasi supaya nomor seperti
+           tanggal / waktu tidak ikut.
+        */
+
+        if (
+            isNaN(nomor) ||
+            nomor < 1 ||
+            nomor > 50
+        ) {
+            continue;
+        }
+
+
+        const mataKuliah =
+            cleanValue(row[mataCol]);
+
+        const sks =
+            cleanValue(row[sksCol]);
+
+        const ruang =
+            cleanValue(row[ruangCol]);
+
+        const hari =
+            cleanValue(row[hariCol]);
+
+        const waktu =
+            cleanValue(row[waktuCol]);
+
+        const dosen =
+            cleanValue(row[dosenCol]);
+
+
+        /*
+           Mata kuliah harus ada.
+        */
+
+        if (!mataKuliah) {
+            continue;
+        }
+
+
+        /*
+           FILTER TAMBAHAN:
+           kalau ternyata isi mata kuliah
+           adalah jam seperti 08.50 - 10.30,
+           JANGAN MASUKKAN.
+        */
+
+        if (isTimeValue(mataKuliah)) {
+            continue;
+        }
+
+
+        data.push({
+
+            no: nomor,
+
+            mataKuliah: mataKuliah,
+
+            sks: sks,
+
+            ruang: ruang,
+
+            hari: hari,
+
+            waktu: waktu,
+
+            dosen: dosen
+
+        });
 
     }
 
-    /*
-     * Hapus duplikat yang benar-benar identik
-     */
-
-    const unik = [];
-
-    hasil.forEach(item => {
-
-      const sudahAda = unik.some(x =>
-        x.mataKuliah.toUpperCase() ===
-          item.mataKuliah.toUpperCase()
-        &&
-        x.dosen.toUpperCase() ===
-          item.dosen.toUpperCase()
-      );
-
-      if (!sudahAda) {
-        unik.push(item);
-      }
-
-    });
-
-    return unik;
-
-  }
-
-
-  /*
-   * ==========================================
-   * 6. TAMPILKAN HASIL
-   * ==========================================
-   */
-
-  function tampilkanJadwal(code, jadwal) {
-
-    resultTitle.textContent =
-      `${currentSheet.toUpperCase()} ${code}`;
-
-    resultBody.innerHTML = "";
-
-    jadwal.forEach((item, index) => {
-
-      const tr =
-        document.createElement("tr");
-
-      tr.innerHTML = `
-
-        <td>${index + 1}</td>
-
-        <td>${escapeHTML(item.mataKuliah)}</td>
-
-        <td>${escapeHTML(item.sks)}</td>
-
-        <td>${escapeHTML(item.ruang)}</td>
-
-        <td>${escapeHTML(item.hari)}</td>
-
-        <td>${escapeHTML(item.waktu)}</td>
-
-        <td>${escapeHTML(item.dosen)}</td>
-
-      `;
-
-      resultBody.appendChild(tr);
-
-    });
-
-    resultCard.style.display = "block";
 
     /*
-     * Scroll ke hasil
-     */
+       Urutkan berdasarkan nomor asli.
+    */
 
-    resultCard.scrollIntoView({
-      behavior: "smooth"
+    data.sort(function(a, b) {
+        return a.no - b.no;
     });
 
-  }
+
+    return {
+        titleRow,
+        headerRow,
+        data
+    };
+
+}
 
 
-  /*
-   * ==========================================
-   * 7. AMANKAN TEKS
-   * ==========================================
-   */
+// =====================================================
+// CLEAN VALUE
+// =====================================================
 
-  function escapeHTML(value) {
+function cleanValue(value) {
 
     if (
-      value === null ||
-      value === undefined
+        value === null ||
+        value === undefined
     ) {
-      return "";
+        return "";
     }
 
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
 
-  }
+    return String(value)
+        .replace(/\s+/g, " ")
+        .trim();
+
+}
+
+
+// =====================================================
+// DETEKSI JAM
+// =====================================================
+
+function isTimeValue(text) {
+
+    if (!text) return false;
+
+
+    /*
+       Contoh:
+
+       08.50 - 10.30
+       13.00 - 14.40
+       07.10 - 08.50
+    */
+
+    return /^\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}$/
+        .test(text.trim());
+
+}
+
+
+// =====================================================
+// TAMPILKAN JADWAL
+// =====================================================
+
+function displaySchedule(code, data) {
+
+    let html = `
+
+        <div class="card table-card">
+
+            <div class="jadwal-title">
+                REG A ${code}
+            </div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>NO</th>
+
+                        <th>MATA KULIAH</th>
+
+                        <th>SKS</th>
+
+                        <th>RUANG</th>
+
+                        <th>HARI</th>
+
+                        <th>WAKTU</th>
+
+                        <th>DOSEN PENGAMPU</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+    `;
+
+
+    if (data.length === 0) {
+
+        html += `
+
+            <tr>
+
+                <td colspan="7" class="no-data">
+                    Tidak ada data mata kuliah.
+                </td>
+
+            </tr>
+
+        `;
+
+    } else {
+
+        data.forEach(function(row) {
+
+            html += `
+
+                <tr>
+
+                    <td>${escapeHtml(row.no)}</td>
+
+                    <td>${escapeHtml(row.mataKuliah)}</td>
+
+                    <td>${escapeHtml(row.sks)}</td>
+
+                    <td>${escapeHtml(row.ruang)}</td>
+
+                    <td>${escapeHtml(row.hari)}</td>
+
+                    <td>${escapeHtml(row.waktu)}</td>
+
+                    <td>${escapeHtml(row.dosen)}</td>
+
+                </tr>
+
+            `;
+
+        });
+
+    }
+
+
+    html += `
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    `;
+
+
+    document.getElementById("result").innerHTML =
+        html;
+
+}
+
+
+// =====================================================
+// ANTI HTML INJECTION
+// =====================================================
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
 
 </script>
 
