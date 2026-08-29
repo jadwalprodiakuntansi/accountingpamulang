@@ -174,11 +174,10 @@ async function download(){
         }
 
         const dataEnd=row-1;
-        if(dataEnd>=tableStart){
+        // PENTING: ExcelJS tidak mengizinkan Table tanpa baris data.
+        // Jadi addTable HANYA dipanggil jika kelas memang punya mata kuliah.
+        if(cls.data.length>0){
           const tableName='T_'+reg+'_'+String(cls.code).replace(/[^A-Za-z0-9_]/g,'_')+'_'+index;
-          // ExcelJS mewajibkan definisi rows saat membuat Table.
-          // Gunakan data yang sama dengan yang sudah ditulis ke worksheet,
-          // sehingga tabel Excel benar-benar terbentuk tanpa error.
           ws.addTable({
             name:tableName,
             ref:'A'+tableStart+':I'+dataEnd,
@@ -198,6 +197,15 @@ async function download(){
               r.dosen
             ])
           });
+        } else {
+          // Kelas kosong tetap ditampilkan di Excel, tetapi bukan Table Excel.
+          const note=ws.getCell(row,1);
+          ws.mergeCells(row,1,row,9);
+          note.value='Belum ada data mata kuliah untuk kelas ini pada file Excel sumber.';
+          note.font={name:'Arial',size:10,italic:true,color:{argb:'64748B'}};
+          note.alignment={horizontal:'center',vertical:'middle'};
+          note.fill={type:'pattern',pattern:'solid',fgColor:{argb:'F8FAFC'}};
+          row++;
         }
 
         // Jarak antar tabel kelas
@@ -220,7 +228,7 @@ async function download(){
     a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
 
-    statusEl.innerHTML='<div class="success"><b>Excel berhasil dibuat!</b> Setiap reguler menjadi 1 sheet, dan setiap kelas menjadi tabel terpisah dengan judul bold, header berwarna, border, lebar kolom, filter tabel, dan tampilan siap cetak.</div>';
+    statusEl.innerHTML='<div class="success"><b>Excel berhasil dibuat!</b> Reg A, Reg B, dan Reg C/CS masing-masing menjadi sheet sendiri. Setiap kelas dibuat sebagai tabel Excel terpisah, lengkap dengan judul bold, header, border, filter, lebar kolom, dan format siap cetak. Kelas tanpa data tetap ditampilkan sebagai catatan dan tidak dibuat sebagai Table Excel agar proses tidak error.</div>';
   }catch(err){
     console.error(err);
     statusEl.innerHTML='<div class="error">Gagal membuat Excel: '+esc(err.message||err)+'</div>';
