@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pengolah Jadwal Akuntansi</title>
+
+  <title>Pengolah Jadwal Prodi Akuntansi</title>
 
   <!-- Library untuk membaca Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -15,159 +16,164 @@
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f7fb;
-      color: #222;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f6fa;
+      color: #111827;
     }
 
     .header {
       background: #111827;
       color: white;
-      padding: 25px 20px;
+      padding: 40px 20px;
       text-align: center;
     }
 
     .header h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
+      margin: 0 0 10px;
+      font-size: 32px;
     }
 
     .header p {
       margin: 0;
-      opacity: .8;
+      color: #d1d5db;
+      font-size: 18px;
     }
 
     .container {
-      max-width: 1100px;
-      margin: 30px auto;
-      padding: 0 20px;
+      width: min(1400px, 94%);
+      margin: 35px auto;
     }
 
     .card {
       background: white;
-      border-radius: 14px;
-      padding: 22px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,.08);
+      border-radius: 18px;
+      padding: 28px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.07);
     }
 
-    .card h2 {
+    h2 {
       margin-top: 0;
-      font-size: 20px;
+      font-size: 24px;
     }
 
-    input[type="file"] {
-      width: 100%;
-      padding: 14px;
-      border: 2px dashed #bbb;
-      border-radius: 10px;
-      background: #fafafa;
+    .upload-area {
+      border: 2px dashed #b8bdc7;
+      border-radius: 15px;
+      padding: 30px;
+      text-align: center;
       cursor: pointer;
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
+    input[type="file"] {
+      font-size: 16px;
+      margin-bottom: 15px;
     }
 
-    select,
-    input[type="text"] {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
     }
 
     label {
       display: block;
       font-weight: bold;
-      margin-bottom: 7px;
+      margin-bottom: 8px;
+    }
+
+    select {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 16px;
+      background: white;
     }
 
     button {
-      margin-top: 15px;
-      padding: 13px 20px;
-      border: 0;
-      border-radius: 8px;
+      margin-top: 20px;
+      padding: 14px 22px;
+      border: none;
+      border-radius: 10px;
       background: #111827;
       color: white;
+      font-size: 16px;
       font-weight: bold;
       cursor: pointer;
     }
 
     button:hover {
-      opacity: .9;
-    }
-
-    .info {
-      padding: 12px;
-      background: #eef2ff;
-      border-radius: 8px;
-      margin-top: 15px;
-      font-size: 14px;
-    }
-
-    .error {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 12px;
-      border-radius: 8px;
-      margin-top: 15px;
+      background: #1f2937;
     }
 
     .success {
       background: #dcfce7;
       color: #166534;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 15px;
+      border-radius: 10px;
       margin-top: 15px;
     }
 
-    .class-title {
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+
+    .result-title {
       text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
-    }
-
-    th,
-    td {
-      border: 1px solid #ccc;
-      padding: 11px 9px;
-      text-align: left;
+      min-width: 900px;
     }
 
     th {
       background: #111827;
       color: white;
+      padding: 15px 12px;
+      border: 1px solid #d1d5db;
       text-align: center;
     }
 
-    td.no {
-      text-align: center;
-      width: 50px;
+    td {
+      padding: 13px 12px;
+      border: 1px solid #d1d5db;
+      background: white;
     }
 
-    @media(max-width: 700px) {
-      .controls {
+    td:first-child {
+      text-align: center;
+      width: 60px;
+    }
+
+    .empty {
+      text-align: center;
+      color: #6b7280;
+      padding: 30px;
+    }
+
+    @media (max-width: 700px) {
+      .form-grid {
         grid-template-columns: 1fr;
       }
 
-      table {
-        font-size: 13px;
+      .header h1 {
+        font-size: 25px;
       }
 
-      th,
-      td {
-        padding: 8px 5px;
+      .card {
+        padding: 20px;
       }
     }
   </style>
@@ -186,52 +192,78 @@
     <div class="card">
       <h2>1. Upload File Excel</h2>
 
-      <input
-        type="file"
-        id="excelFile"
-        accept=".xlsx,.xls"
-      >
+      <div class="upload-area">
+        <input
+          type="file"
+          id="excelFile"
+          accept=".xlsx,.xls"
+        >
 
-      <div id="uploadStatus"></div>
+        <div id="uploadStatus"></div>
+      </div>
     </div>
-
 
     <!-- PILIH KELAS -->
     <div class="card">
 
       <h2>2. Pilih Kelas</h2>
 
-      <div class="controls">
+      <div class="form-grid">
 
         <div>
-          <label>Sheet</label>
-          <select id="sheetSelect">
+          <label for="sheetSelect">Program / Sheet</label>
+
+          <select id="sheetSelect" disabled>
             <option value="">Upload Excel terlebih dahulu</option>
           </select>
         </div>
 
         <div>
-          <label>Kode Kelas</label>
-          <select id="kodeSelect">
+          <label for="classSelect">Kode Kelas</label>
+
+          <select id="classSelect" disabled>
             <option value="">Pilih kode kelas</option>
           </select>
         </div>
 
       </div>
 
-      <button onclick="prosesJadwal()">
+      <button id="showButton" disabled>
         Tampilkan Jadwal
       </button>
 
-      <div id="processStatus"></div>
+      <div id="message"></div>
 
     </div>
 
-
     <!-- HASIL -->
-    <div class="card">
+    <div class="card" id="resultCard" style="display:none;">
 
-      <div id="hasil"></div>
+      <div class="result-title">
+        <h2 id="resultTitle"></h2>
+      </div>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>NO</th>
+              <th>MATA KULIAH</th>
+              <th>SKS</th>
+              <th>RUANG</th>
+              <th>HARI</th>
+              <th>WAKTU</th>
+              <th>DOSEN PENGAMPU</th>
+            </tr>
+          </thead>
+
+          <tbody id="resultBody"></tbody>
+
+        </table>
+
+      </div>
 
     </div>
 
@@ -240,36 +272,77 @@
 
 <script>
 
-let workbook = null;
+  let workbook = null;
+  let currentData = {};
+  let currentSheet = "";
+
+  const excelFile = document.getElementById("excelFile");
+  const sheetSelect = document.getElementById("sheetSelect");
+  const classSelect = document.getElementById("classSelect");
+  const showButton = document.getElementById("showButton");
+  const uploadStatus = document.getElementById("uploadStatus");
+  const message = document.getElementById("message");
+  const resultCard = document.getElementById("resultCard");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultBody = document.getElementById("resultBody");
 
 
-/* =========================
-   UPLOAD EXCEL
-========================= */
+  /*
+   * ==========================================
+   * 1. UPLOAD EXCEL
+   * ==========================================
+   */
 
-document.getElementById("excelFile").addEventListener("change", function(e) {
+  excelFile.addEventListener("change", async function(event) {
 
-  const file = e.target.files[0];
+    const file = event.target.files[0];
 
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = function(event) {
+    if (!file) return;
 
     try {
 
-      const data = new Uint8Array(event.target.result);
+      uploadStatus.innerHTML =
+        `<div class="success">Sedang membaca file...</div>`;
 
-      workbook = XLSX.read(data, {
+      const arrayBuffer = await file.arrayBuffer();
+
+      workbook = XLSX.read(arrayBuffer, {
         type: "array"
       });
 
-      const sheetSelect = document.getElementById("sheetSelect");
+      /*
+       * Kita hanya gunakan sheet jadwal.
+       * Cek Dosen, Sheet1, dan Sheet4 tidak digunakan.
+       */
 
-      sheetSelect.innerHTML = "";
+      const allowedSheets = [
+        "Reg A",
+        "Reg B",
+        "Reg CS"
+      ];
 
-      workbook.SheetNames.forEach(function(sheetName) {
+      const availableSheets = workbook.SheetNames.filter(
+        name => allowedSheets.includes(name)
+      );
+
+      if (availableSheets.length === 0) {
+
+        uploadStatus.innerHTML =
+          `<div class="error">
+            Sheet Reg A / Reg B / Reg CS tidak ditemukan.
+          </div>`;
+
+        return;
+      }
+
+      /*
+       * Masukkan sheet ke dropdown
+       */
+
+      sheetSelect.innerHTML =
+        `<option value="">Pilih program</option>`;
+
+      availableSheets.forEach(sheetName => {
 
         const option = document.createElement("option");
 
@@ -280,402 +353,538 @@ document.getElementById("excelFile").addEventListener("change", function(e) {
 
       });
 
-      document.getElementById("uploadStatus").innerHTML =
-        '<div class="success">File berhasil dibaca. Pilih sheet untuk melanjutkan.</div>';
+      sheetSelect.disabled = false;
 
-      loadCodes();
+      uploadStatus.innerHTML =
+        `<div class="success">
+          File berhasil dibaca. Pilih program dan kode kelas.
+        </div>`;
 
-    } catch(error) {
+      /*
+       * Reset
+       */
 
-      document.getElementById("uploadStatus").innerHTML =
-        '<div class="error">File Excel tidak dapat dibaca.</div>';
+      classSelect.innerHTML =
+        `<option value="">Pilih kode kelas</option>`;
+
+      classSelect.disabled = true;
+
+      showButton.disabled = true;
+
+      resultCard.style.display = "none";
+
+    }
+
+    catch (error) {
 
       console.error(error);
 
+      uploadStatus.innerHTML =
+        `<div class="error">
+          File gagal dibaca.
+        </div>`;
+
     }
 
-  };
-
-  reader.readAsArrayBuffer(file);
-
-});
+  });
 
 
-/* =========================
-   SAAT SHEET DIGANTI
-========================= */
+  /*
+   * ==========================================
+   * 2. CARI SEMUA KODE KELAS
+   * ==========================================
+   */
 
-document.getElementById("sheetSelect").addEventListener("change", function() {
+  sheetSelect.addEventListener("change", function() {
 
-  loadCodes();
+    const sheetName = this.value;
 
-});
+    if (!sheetName) {
+
+      classSelect.disabled = true;
+      showButton.disabled = true;
+
+      return;
+    }
+
+    currentSheet = sheetName;
+
+    const worksheet = workbook.Sheets[sheetName];
+
+    /*
+     * Ambil seluruh sheet sebagai array.
+     */
+
+    const data = XLSX.utils.sheet_to_json(
+      worksheet,
+      {
+        header: 1,
+        defval: ""
+      }
+    );
+
+    currentData = {
+      data: data,
+      sheet: sheetName
+    };
+
+    /*
+     * Cari kode kelas di seluruh sheet.
+     *
+     * Contoh:
+     * 01AKSP001
+     * 01AKSP002
+     * 01AKSM001
+     * 01AKSE001
+     */
+
+    const codes = [];
+
+    data.forEach(row => {
+
+      row.forEach(cell => {
+
+        if (cell === null || cell === undefined) {
+          return;
+        }
+
+        const text = String(cell).trim();
+
+        /*
+         * Format kode:
+         * angka + AKS + huruf + angka
+         */
+
+        if (/^\d{2}\s?AKS[A-Z]\d{3}$/i.test(text)) {
+
+          const cleanCode =
+            text.replace(/\s+/g, "").toUpperCase();
+
+          if (!codes.includes(cleanCode)) {
+            codes.push(cleanCode);
+          }
+
+        }
+
+      });
+
+    });
+
+    /*
+     * Urutkan kode
+     */
+
+    codes.sort((a,b) =>
+      a.localeCompare(b, undefined, {
+        numeric: true
+      })
+    );
+
+    /*
+     * Masukkan ke dropdown
+     */
+
+    classSelect.innerHTML =
+      `<option value="">Pilih kode kelas</option>`;
+
+    codes.forEach(code => {
+
+      const option = document.createElement("option");
+
+      option.value = code;
+      option.textContent = code;
+
+      classSelect.appendChild(option);
+
+    });
+
+    classSelect.disabled = false;
+
+    showButton.disabled = true;
+
+    message.innerHTML =
+      `<div class="success">
+        ${codes.length} kode kelas ditemukan.
+      </div>`;
+
+  });
 
 
-/* =========================
-   CARI KODE KELAS
-========================= */
+  /*
+   * ==========================================
+   * 3. AKTIFKAN TOMBOL
+   * ==========================================
+   */
 
-function loadCodes() {
+  classSelect.addEventListener("change", function() {
 
-  if (!workbook) return;
+    showButton.disabled = !this.value;
 
-  const sheetName =
-    document.getElementById("sheetSelect").value;
+  });
 
-  if (!sheetName) return;
 
-  const sheet = workbook.Sheets[sheetName];
+  /*
+   * ==========================================
+   * 4. TAMPILKAN JADWAL
+   * ==========================================
+   */
 
-  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  showButton.addEventListener("click", function() {
 
-  const kodeSet = new Set();
+    const code = classSelect.value;
 
-  for (let r = range.s.r; r <= range.e.r; r++) {
+    if (!code) return;
 
-    for (let c = range.s.c; c <= range.e.c; c++) {
+    try {
 
-      const cellAddress =
-        XLSX.utils.encode_cell({
-          r: r,
-          c: c
-        });
+      const jadwal = ambilDataKelas(
+        currentData.data,
+        code
+      );
 
-      const cell = sheet[cellAddress];
+      if (jadwal.length === 0) {
 
-      if (!cell) continue;
+        message.innerHTML =
+          `<div class="error">
+            Data mata kuliah untuk ${code} tidak ditemukan.
+          </div>`;
 
-      const value = String(cell.v).trim();
+        resultCard.style.display = "none";
+
+        return;
+      }
+
+      tampilkanJadwal(
+        code,
+        jadwal
+      );
+
+      message.innerHTML =
+        `<div class="success">
+          ${jadwal.length} mata kuliah ditemukan untuk ${code}.
+        </div>`;
+
+    }
+
+    catch (error) {
+
+      console.error(error);
+
+      message.innerHTML =
+        `<div class="error">
+          Terjadi kesalahan saat mengolah data.
+          Silakan lihat Console untuk detail.
+        </div>`;
+
+    }
+
+  });
+
+
+  /*
+   * ==========================================
+   * 5. FUNGSI UTAMA MENGAMBIL DATA
+   * ==========================================
+   *
+   * STRUKTUR FILE KAMU:
+   *
+   * DOSEN
+   * MATA KULIAH
+   * DOSEN
+   * MATA KULIAH
+   * DOSEN
+   * MATA KULIAH
+   *
+   * Jadi kita TIDAK memisahkan daftar
+   * dosen dan mata kuliah.
+   *
+   * Kita pertahankan urutan aslinya.
+   *
+   */
+
+  function ambilDataKelas(data, targetCode) {
+
+    let posisiKode = null;
+
+    /*
+     * Cari posisi kode kelas
+     */
+
+    for (let r = 0; r < data.length; r++) {
+
+      for (let c = 0; c < data[r].length; c++) {
+
+        const cell = String(
+          data[r][c] ?? ""
+        ).trim()
+        .replace(/\s+/g, "")
+        .toUpperCase();
+
+        if (cell === targetCode) {
+
+          posisiKode = {
+            row: r,
+            col: c
+          };
+
+          break;
+
+        }
+
+      }
+
+      if (posisiKode) break;
+
+    }
+
+    if (!posisiKode) {
+      return [];
+    }
+
+    const col = posisiKode.col;
+    const startRow = posisiKode.row + 1;
+
+    /*
+     * Ambil seluruh isi kolom kode
+     * setelah header kode.
+     *
+     * Kita sengaja TIDAK berhenti pada
+     * baris kosong karena dalam file kamu
+     * ada jeda/baris kosong.
+     */
+
+    const values = [];
+
+    for (
+      let r = startRow;
+      r < data.length;
+      r++
+    ) {
+
+      const value = data[r][col];
+
+      if (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ""
+      ) {
+
+        const text =
+          String(value).trim();
+
+        /*
+         * Kalau ketemu kode kelas lain,
+         * berarti sudah masuk kolom/blok
+         * kelas berikutnya.
+         */
+
+        const normalized =
+          text.replace(/\s+/g, "")
+              .toUpperCase();
+
+        if (
+          /^\d{2}AKS[A-Z]\d{3}$/.test(normalized) &&
+          normalized !== targetCode
+        ) {
+          break;
+        }
+
+        /*
+         * Abaikan tulisan DOSEN / MATAKULIAH
+         */
+
+        if (
+          text.toUpperCase() ===
+          "DOSEN / MATAKULIAH"
+        ) {
+          continue;
+        }
+
+        values.push(text);
+
+      }
+
+    }
+
+
+    /*
+     * Sekarang values bentuknya:
+     *
+     * [
+     *   EUIS,
+     *   MATEMATIKA,
+     *   INRINOFITA,
+     *   PANCASILA,
+     *   YULI,
+     *   AGAMA,
+     *   ...
+     * ]
+     *
+     * Jadi pasangan:
+     *
+     * index 0 = DOSEN
+     * index 1 = MATA KULIAH
+     *
+     * index 2 = DOSEN
+     * index 3 = MATA KULIAH
+     *
+     */
+
+    const hasil = [];
+
+    for (
+      let i = 0;
+      i + 1 < values.length;
+      i += 2
+    ) {
+
+      const dosen = values[i];
+      const mataKuliah = values[i + 1];
 
       /*
-        Mencari kode seperti:
-        01AKSP001
-        01AKSP002
-        01AKSP003
-      */
+       * Jangan masukkan data aneh
+       */
 
-      const match =
-        value.match(/01AKSP[0-9]+/i);
-
-      if (match) {
-
-        kodeSet.add(
-          match[0].toUpperCase()
-        );
-
+      if (
+        !dosen ||
+        !mataKuliah
+      ) {
+        continue;
       }
+
+      /*
+       * Hindari header / tulisan yang bukan
+       * data mata kuliah.
+       */
+
+      if (
+        mataKuliah.toUpperCase()
+          .includes("DOSEN / MATAKULIAH")
+      ) {
+        continue;
+      }
+
+      hasil.push({
+
+        mataKuliah: mataKuliah,
+
+        dosen: dosen,
+
+        sks: "",
+
+        ruang: "",
+
+        hari: "",
+
+        waktu: ""
+
+      });
 
     }
 
-  }
+    /*
+     * Hapus duplikat yang benar-benar identik
+     */
 
-  const kodeSelect =
-    document.getElementById("kodeSelect");
+    const unik = [];
 
-  kodeSelect.innerHTML =
-    '<option value="">Pilih kode kelas</option>';
+    hasil.forEach(item => {
 
-  Array.from(kodeSet)
-    .sort()
-    .forEach(function(kode) {
+      const sudahAda = unik.some(x =>
+        x.mataKuliah.toUpperCase() ===
+          item.mataKuliah.toUpperCase()
+        &&
+        x.dosen.toUpperCase() ===
+          item.dosen.toUpperCase()
+      );
 
-      const option =
-        document.createElement("option");
-
-      option.value = kode;
-      option.textContent = kode;
-
-      kodeSelect.appendChild(option);
-
-    });
-
-  if (kodeSet.size === 0) {
-
-    document.getElementById("processStatus").innerHTML =
-      '<div class="error">Kode kelas seperti 01AKSP001 tidak ditemukan di sheet ini.</div>';
-
-  } else {
-
-    document.getElementById("processStatus").innerHTML =
-      '<div class="success">' +
-      kodeSet.size +
-      ' kode kelas ditemukan.' +
-      '</div>';
-
-  }
-
-}
-
-
-/* =========================
-   CARI POSISI KODE
-========================= */
-
-function findKodeCell(sheet, kode) {
-
-  const range =
-    XLSX.utils.decode_range(sheet["!ref"]);
-
-  for (let r = range.s.r; r <= range.e.r; r++) {
-
-    for (let c = range.s.c; c <= range.e.c; c++) {
-
-      const address =
-        XLSX.utils.encode_cell({
-          r: r,
-          c: c
-        });
-
-      const cell = sheet[address];
-
-      if (!cell) continue;
-
-      const value =
-        String(cell.v).trim().toUpperCase();
-
-      if (value.includes(kode)) {
-
-        return {
-          row: r,
-          col: c
-        };
-
+      if (!sudahAda) {
+        unik.push(item);
       }
 
-    }
-
-  }
-
-  return null;
-
-}
-
-
-/* =========================
-   AMBIL NILAI CELL
-========================= */
-
-function getCellValue(sheet, row, col) {
-
-  const address =
-    XLSX.utils.encode_cell({
-      r: row,
-      c: col
     });
 
-  const cell = sheet[address];
-
-  if (!cell) return "";
-
-  return String(cell.v).trim();
-
-}
-
-
-/* =========================
-   PROSES JADWAL
-========================= */
-
-function prosesJadwal() {
-
-  if (!workbook) {
-
-    alert("Upload file Excel terlebih dahulu.");
-
-    return;
-
-  }
-
-  const sheetName =
-    document.getElementById("sheetSelect").value;
-
-  const kode =
-    document.getElementById("kodeSelect").value;
-
-  if (!kode) {
-
-    alert("Pilih kode kelas terlebih dahulu.");
-
-    return;
-
-  }
-
-  const sheet =
-    workbook.Sheets[sheetName];
-
-  const posisi =
-    findKodeCell(sheet, kode);
-
-  if (!posisi) {
-
-    document.getElementById("hasil").innerHTML =
-      '<div class="error">Kode kelas tidak ditemukan.</div>';
-
-    return;
+    return unik;
 
   }
 
 
   /*
-    Berdasarkan format file jadwal:
+   * ==========================================
+   * 6. TAMPILKAN HASIL
+   * ==========================================
+   */
 
-    Baris kode kelas
-          ↓
-    DATA MATA KULIAH
-    DATA DOSEN
-    DATA MATA KULIAH
-    DATA DOSEN
-    dst.
+  function tampilkanJadwal(code, jadwal) {
 
-    Kita membaca 8 pasangan data.
-  */
+    resultTitle.textContent =
+      `${currentSheet.toUpperCase()} ${code}`;
 
-  const startRow =
-    posisi.row + 3;
+    resultBody.innerHTML = "";
 
-  const data = [];
+    jadwal.forEach((item, index) => {
 
+      const tr =
+        document.createElement("tr");
 
-  for (let i = 0; i < 8; i++) {
+      tr.innerHTML = `
 
-    const matkul =
-      getCellValue(
-        sheet,
-        startRow + (i * 2),
-        posisi.col
-      );
+        <td>${index + 1}</td>
 
-    const dosen =
-      getCellValue(
-        sheet,
-        startRow + (i * 2) + 1,
-        posisi.col
-      );
+        <td>${escapeHTML(item.mataKuliah)}</td>
 
-    if (matkul || dosen) {
+        <td>${escapeHTML(item.sks)}</td>
 
-      data.push({
-        no: i + 1,
-        matkul: matkul,
-        dosen: dosen
-      });
+        <td>${escapeHTML(item.ruang)}</td>
 
-    }
+        <td>${escapeHTML(item.hari)}</td>
 
-  }
+        <td>${escapeHTML(item.waktu)}</td>
 
+        <td>${escapeHTML(item.dosen)}</td>
 
-  tampilkanHasil(kode, data);
+      `;
 
-}
+      resultBody.appendChild(tr);
 
+    });
 
-/* =========================
-   TAMPILKAN HASIL
-========================= */
-
-function tampilkanHasil(kode, data) {
-
-  let html = "";
-
-  html +=
-    '<div class="class-title">' +
-    'REGULER A ' +
-    kode +
-    '</div>';
-
-  html += "<table>";
-
-  html += "<thead>";
-
-  html += "<tr>";
-
-  html += "<th>NO</th>";
-  html += "<th>MATA KULIAH</th>";
-  html += "<th>SKS</th>";
-  html += "<th>RUANG</th>";
-  html += "<th>HARI</th>";
-  html += "<th>WAKTU</th>";
-  html += "<th>DOSEN PENGAMPU</th>";
-
-  html += "</tr>";
-
-  html += "</thead>";
-
-  html += "<tbody>";
-
-
-  if (data.length === 0) {
-
-    html +=
-      '<tr><td colspan="7" style="text-align:center">' +
-      'Tidak ada data ditemukan.' +
-      '</td></tr>';
-
-  }
-
-
-  data.forEach(function(item) {
-
-    html += "<tr>";
-
-    html +=
-      '<td class="no">' +
-      item.no +
-      "</td>";
-
-    html +=
-      "<td>" +
-      escapeHTML(item.matkul) +
-      "</td>";
+    resultCard.style.display = "block";
 
     /*
-      Kolom ini sengaja kosong dulu.
-      Nanti bisa kita hubungkan ke data SKS.
-    */
+     * Scroll ke hasil
+     */
 
-    html += "<td></td>";
+    resultCard.scrollIntoView({
+      behavior: "smooth"
+    });
 
-    html += "<td></td>";
-
-    html += "<td></td>";
-
-    html += "<td></td>";
-
-    html +=
-      "<td>" +
-      escapeHTML(item.dosen) +
-      "</td>";
-
-    html += "</tr>";
-
-  });
+  }
 
 
-  html += "</tbody>";
+  /*
+   * ==========================================
+   * 7. AMANKAN TEKS
+   * ==========================================
+   */
 
-  html += "</table>";
+  function escapeHTML(value) {
 
-  document.getElementById("hasil").innerHTML =
-    html;
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
 
-}
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
 
-
-/* =========================
-   AMANKAN TEKS HTML
-========================= */
-
-function escapeHTML(text) {
-
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
+  }
 
 </script>
 
