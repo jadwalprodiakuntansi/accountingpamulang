@@ -43,10 +43,27 @@ function esc(v){return clean(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 function normCode(v){return clean(v).replace(/\s+/g,'').toUpperCase()}
 function semester(code){const m=normCode(code).match(/^(\d{2})/);return m?String(parseInt(m[1],10)):''}
 function validCode(v,reg){const x=normCode(v); if(reg==='A') return /^\d{2}AKSP[A-Z0-9]{2,4}(?:\([^)]*\))?$/.test(x); if(reg==='B') return /^\d{2}AKSM[A-Z0-9]{2,4}(?:\([^)]*\))?$/.test(x); return /^\d{2}AKSE[A-Z0-9]{2,4}(?:\([^)]*\))?$/.test(x)}
-function findClasses(ws,reg){const cfg=CFG[reg],row=ws[cfg.header-1]||[],out=[]; row.forEach((cell,i)=>{const v=cell&&cell.v; if(validCode(v,reg)){out.push({reg,code:normCode(v),col:i+1})}}); return out}
-function value(ws,r,c){const cell=ws[XLSX.utils.encode_cell({r:r-1,c:c-1})];return cell?clean(cell.v):''}
-function room(ws,r,c){const h=value(ws,CFG.A.header,c+1);return h.toUpperCase()==='RUANGAN'||h.toUpperCase()==='RUANG'?value(ws,r,c+1):''}
-function parseClass(ws,info,reg){const cfg=CFG[reg],data=[];let no=1; for(const [start,end,day] of cfg.blocks){for(let r=start;r<=end;r++){const jam=value(ws,r,3); if(!/^\d+(?:\.0+)?$/.test(jam)) continue; const j=parseInt(jam,10); const teacher=value(ws,r,info.col); const course=value(ws,r+1,info.col); if(course){data.push({semester:semester(info.code),no:no++,mataKuliah:course,sks:'',ruang:room(ws,r,info.col),hari:day,jamKe:j,waktu:cfg.time[j]||'',dosen:teacher})}}} return {reg,code:info.code,semester:semester(info.code),data}}
+function findClasses(ws,reg){
+  const cfg=CFG[reg],out=[];
+  if(!ws || !ws['!ref']) return out;
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let c=range.s.c+1;c<=range.e.c+1;c++){
+    const v=value(ws,cfg.header,c);
+    if(validCode(v,reg)) out.push({reg,code:normCode(v),col:c});
+  }
+  return out;
+}
+function value(ws,r,c){
+  const cell=ws[XLSX.utils.encode_cell({r:r-1,c:c-1})];
+  return cell?clean(cell.v):'';
+}
+function room(ws,r,c,reg){
+  const cfg=CFG[reg];
+  const headerBelow=value(ws,cfg.header+1,c+1).toUpperCase();
+  if(headerBelow==='RUANGAN'||headerBelow==='RUANG') return value(ws,r,c+1);
+  return '';
+}
+function parseClass(ws,info,reg){const cfg=CFG[reg],data=[];let no=1; for(const [start,end,day] of cfg.blocks){for(let r=start;r<=end;r++){const jam=value(ws,r,3); if(!/^\d+(?:\.0+)?$/.test(jam)) continue; const j=parseInt(jam,10); const teacher=value(ws,r,info.col); const course=value(ws,r+1,info.col); if(course){data.push({semester:semester(info.code),no:no++,mataKuliah:course,sks:'',ruang:room(ws,r,info.col,reg),hari:day,jamKe:j,waktu:cfg.time[j]||'',dosen:teacher})}}} return {reg,code:info.code,semester:semester(info.code),data}}
 function parseAll(){const arr=[];for(const reg of ['A','B','CS']){const cfg=CFG[reg],ws=wb.Sheets[cfg.sheet];if(!ws)continue;findClasses(ws,reg).forEach(info=>arr.push(parseClass(ws,info,reg)))}return arr}
 function regName(r){return r==='A'?'REGULER A':r==='B'?'REGULER B':'REGULER C / CS'}
 function fillKelas(){const reg=regEl.value,list=reg==='ALL'?classes:classes.filter(x=>x.reg===reg);kelasEl.innerHTML='<option value="">Pilih kode kelas</option>';list.forEach(x=>{const o=document.createElement('option');o.value=x.reg+'|'+x.code;o.textContent=x.code;kelasEl.appendChild(o)});kelasEl.disabled=modeEl.value==='single'&&list.length===0;showEl.disabled=list.length===0;}
