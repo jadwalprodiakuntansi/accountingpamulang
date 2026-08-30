@@ -51,6 +51,13 @@ td.center{text-align:center}
 .teacher-meta{color:#64748b;margin-bottom:14px}
 .teacher-table{min-width:900px}
 .badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e5e7eb;font-weight:700;font-size:12px}
+.conflict-card{border:1px solid #fecaca;border-left:6px solid #dc2626;border-radius:14px;padding:18px;margin:0 0 18px;background:#fff}
+.conflict-title{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap;margin-bottom:12px}
+.conflict-title h3{margin:0;color:#991b1b}
+.conflict-meta{color:#64748b;margin-top:4px}
+.conflict-table{min-width:900px}
+.conflict-badge{background:#fee2e2;color:#991b1b}
+.ok-badge{background:#dcfce7;color:#166534}
 @media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.grid,.button-row{grid-template-columns:1fr}.header h1{font-size:25px}}
 </style>
@@ -90,6 +97,7 @@ td.center{text-align:center}
           <option value="single">Satu kelas</option>
           <option value="all">Semua kelas</option>
           <option value="dosen">Cari dosen</option>
+          <option value="conflict">Cek bentrok dosen</option>
         </select>
       </div>
 
@@ -536,12 +544,15 @@ function populateDosen(){
 function updateControls(){
   const mode=modeSelect.value;
 
-  classSelect.disabled=(mode==='dosen');
+  classSelect.disabled=(mode==='dosen' || mode==='conflict');
   dosenSelect.disabled=(mode!=='dosen');
 
   if(mode==='dosen'){
     classStatus.innerHTML=
       '<div class="info">Pilih nama dosen untuk melihat semua kelas yang diampu.</div>';
+  }else if(mode==='conflict'){
+    classStatus.innerHTML=
+      '<div class="info">Sistem akan mengecek dosen yang mengajar lebih dari satu kelas pada hari dan waktu yang bertabrakan.</div>';
   }else{
     const records=filteredByReg();
     const count=[...new Set(records.map(x=>x.kodeKelas))].length;
@@ -803,9 +814,186 @@ function displayDosen(){
   downloadButton.disabled=false;
 }
 
+function timeRange(value){
+  const m=clean(value).match(/(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/);
+  if(!m) return null;
+
+  return {
+    start:Number(m[1])*60+Number(m[2]),
+    end:Number(m[3])*60+Number(m[4])
+  };
+}
+
+function canonicalTeacher(code){
+  const raw=clean(code);
+  if(!raw) return '';
+
+  const full=teacherFullName(raw);
+  return normalize(full || raw);
+}
+
+function detectDosenConflicts(records){
+  const sorted=sortRecords(records);
+  const byTeacher={};
+
+  sorted.forEach(r=>{
+    const teacherKey=canonicalTeacher(r.dosen);
+    if(!teacherKey) return;
+
+    if(!byTeacher[teacherKey]) byTeacher[teacherKey]=[];
+    byTeacher[teacherKey].push(r);
+  });
+
+  const conflicts=[];
+
+  Object.keys(byTeacher).forEach(teacherKey=>{
+    const rows=byTeacher[teacherKey];
+
+    for(let i=0;i<rows.length;i++){
+      for(let j=i+1;j<rows.length;j++){
+        const a=rows[i];
+        const b=rows[j];
+
+        if(dayOrder(a.hari)!==dayOrder(b.hari)) continue;
+
+        // Jangan anggap dua baris dari kelas yang sama sebagai bentrok.
+        // Yang dicari adalah satu dosen masuk di dua kelas berbeda.
+        if(a.reg===b.reg && a.kodeKelas===b.kodeKelas) continue;
+
+        const ta=timeRange(a.waktu);
+        const tb=timeRange(b.waktu);
+
+        let overlap=false;
+
+        if(ta && tb){
+          overlap=ta.start < tb.end && tb.start < ta.end;
+        }else{
+          // Jika waktu tidak tersedia, fallback ke JAM KE.
+          overlap=String(a.jamKe)===String(b.jamKe);
+        }
+
+        if(!overlap) continue;
+
+        conflicts.push({
+          teacherKey,
+          teacher:teacherFullName(a.dosen || b.dosen),
+          hari:a.hari || b.hari,
+          waktu:a.waktu || b.waktu || '-',
+          rows:[a,b]
+        });
+      }
+    }
+  });
+
+  return conflicts.sort((a,b)=>{
+    const teacherCmp=a.teacher.localeCompare(b.teacher,'id',{sensitivity:'base'});
+    if(teacherCmp!==0) return teacherCmp;
+    const dayCmp=dayOrder(a.hari)-dayOrder(b.hari);
+    if(dayCmp!==0) return dayCmp;
+    return timeToMinutes(a.waktu)-timeToMinutes(b.waktu);
+  });
+}
+
+function displayConflicts(){
+  const records=filteredByReg();
+  const conflicts=detectDosenConflicts(records);
+  displayedRecords=records;
+
+  if(!conflicts.length){
+    result.innerHTML=`
+      <div class="card">
+        <h2>Tidak Ada Bentrok Dosen</h2>
+        <div class="success">
+          Tidak ditemukan dosen yang mengajar dua kelas berbeda pada hari dan waktu yang sama.
+        </div>
+      </div>`;
+    downloadButton.disabled=false;
+    return;
+  }
+
+  const uniqueTeachers=new Set(conflicts.map(x=>x.teacherKey));
+
+  let html=`
+  <div class="card">
+    <div class="toolbar">
+      <div>
+        <h2>Pelacakan Bentrok Dosen</h2>
+        <div class="small">
+          Ditemukan <b>${conflicts.length}</b> bentrok pada
+          <b>${uniqueTeachers.size}</b> dosen.
+          Sistem membandingkan hari + jam dan mendeteksi waktu yang saling overlap.
+        </div>
+      </div>
+      <span class="badge conflict-badge">PERLU DICEK</span>
+    </div>
+  </div>`;
+
+  conflicts.forEach((conflict,index)=>{
+    const a=conflict.rows[0];
+    const b=conflict.rows[1];
+
+    html+=`
+    <div class="conflict-card">
+      <div class="conflict-title">
+        <div>
+          <h3>${escapeHtml(conflict.teacher)}</h3>
+          <div class="conflict-meta">
+            Bentrok #${index+1} • ${escapeHtml(conflict.hari)} • ${escapeHtml(conflict.waktu || '-')} 
+          </div>
+        </div>
+        <span class="badge conflict-badge">BENTROK</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="conflict-table">
+          <thead>
+            <tr>
+              <th>REG</th>
+              <th>KODE KELAS</th>
+              <th>MATA KULIAH</th>
+              <th>HARI</th>
+              <th>JAM KE</th>
+              <th>WAKTU</th>
+              <th>RUANG</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center">${escapeHtml(a.reg)}</td>
+              <td><b>${escapeHtml(a.kodeKelas)}</b></td>
+              <td>${escapeHtml(a.mataKuliah)}</td>
+              <td>${escapeHtml(a.hari)}</td>
+              <td class="center">${escapeHtml(a.jamKe)}</td>
+              <td>${escapeHtml(a.waktu || '-')}</td>
+              <td>${escapeHtml(a.ruang || '-')}</td>
+            </tr>
+            <tr>
+              <td class="center">${escapeHtml(b.reg)}</td>
+              <td><b>${escapeHtml(b.kodeKelas)}</b></td>
+              <td>${escapeHtml(b.mataKuliah)}</td>
+              <td>${escapeHtml(b.hari)}</td>
+              <td class="center">${escapeHtml(b.jamKe)}</td>
+              <td>${escapeHtml(b.waktu || '-')}</td>
+              <td>${escapeHtml(b.ruang || '-')}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  });
+
+  result.innerHTML=html;
+  downloadButton.disabled=true;
+}
+
 function showData(){
   if(modeSelect.value==='dosen'){
     displayDosen();
+    return;
+  }
+
+  if(modeSelect.value==='conflict'){
+    displayConflicts();
     return;
   }
 
