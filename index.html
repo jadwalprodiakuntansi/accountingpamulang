@@ -208,16 +208,16 @@ const DOSEN_ALIAS={
    alfanumerik; yang tersedia adalah Kode Kelas dan Nama di Jadwal.
    ========================================================= */
 const MK_MASTER={
-  "AGAMA": "PENDIDIKAN AGAMA",
+  "AGAMA": "AGAMA",
   "AKUN JASA": "AKUNTANSI JASA",
   "BASIC ENGLISH": "BASIC ENGLISH",
   "ECONOMIC": "ECONOMIC",
-  "PANCASILA": "PENDIDIKAN PANCASILA",
+  "PANCASILA": "PANCASILA",
   "PRICIPLES OF MANAGEMENT": "PRICIPLES OF MANAGEMENT",
   "AK JASA": "AKUNTANSI JASA",
   "TEKNOLOGI DASAR": "TEKNOLOGI INFORMASI",
   "AK PERSH JASA": "AKUNTANSI JASA",
-  "PKN": "PENDIDIKAN KEWARGANEGARAAN",
+  "PKN": "BAHASA INDONESIA",
   "B.INDO": "BAHASA INDONESIA",
   "B.INGGRIS 2": "BAHASA INGGRIS 2",
   "MAKRO": "EKONOMI MAKRO",
@@ -227,7 +227,7 @@ const MK_MASTER={
   "APLIKOM": "PENGANTAR APLIKASI KOMPUTER",
   "B INDO": "BAHASA INDONESIA",
   "B ING 2": "BAHASA INGGRIS 2",
-  "PIE MAKRO": "PENGANTAR ILMU EKONOMI MAKRO",
+  "PIE MAKRO": "EKONOMI MAKRO",
   "AKBI": "AKUNTANSI BIAYA",
   "AK 1": "AKUNTANSI KEUANGAN 1",
   "AUDITING 1": "AUDITING 1",
@@ -290,7 +290,7 @@ const MK_MASTER={
   "SEMINAR AKUNTANSI": "SEMINAR AKUNTANSI KEUANGAN",
   "CORPORATE G": "CORPORATE GORVENANCE",
   "SEMINR AK": "SEMINAR AKUNTANSI KEUANGAN",
-  "MATEMATIKA": "MATEMATIKA EKONOMI",
+  "MATEMATIKA": "MATEMATIKA",
   "AKUNTANSI JASA": "AKUNTANSI JASA",
   "TEKNOLOGI INFORMASI": "TEKNOLOGI INFORMASI",
   "PENGANTAR AKUNTANSI 2": "PENGANTAR AKUNTANSI 2",
@@ -345,6 +345,91 @@ function mkFullName(name){
   const upper=raw.toUpperCase();
   const key=Object.keys(MK_MASTER).find(k=>k.toUpperCase()===upper);
   return key ? MK_MASTER[key] : raw;
+}
+
+/* =========================================================
+   MASTER SKS MATA KULIAH
+   Berdasarkan daftar SKS yang diberikan pengguna.
+   Skripsi dibiarkan kosong karena jumlah SKS tidak diberikan.
+   ========================================================= */
+const SKS_MASTER={
+  "Pendidikan Agama": 2,
+  "Pendidikan Pancasila": 2,
+  "Bahasa Inggris 1": 2,
+  "Matematika Ekonomi": 3,
+  "Pengantar Ilmu Ekonomi Mikro": 2,
+  "Pengantar Akuntansi 1": 3,
+  "Pengantar Bisnis": 2,
+  "Pengantar Manajemen": 3,
+  "Pengantar Akuntansi 2": 3,
+  "Hukum Bisnis dan Regulasi": 3,
+  "Ekonomi Makro": 2,
+  "Kewirausahaan": 3,
+  "Pengantar Aplikasi Komputer": 2,
+  "Bahasa Inggris 2": 2,
+  "Bahasa Indonesia": 2,
+  "Kewarganegaraan": 2,
+  "Perpajakan 1": 3,
+  "Auditing 1": 3,
+  "Akuntansi Keuangan 1": 3,
+  "Sistem Informasi Akuntansi": 3,
+  "Akuntansi Biaya": 3,
+  "Manajemen Pemasaran": 3,
+  "Perekonomian Indonesia": 2,
+  "Perpajakan 2": 3,
+  "Auditing 2": 3,
+  "Akuntansi Keuangan 2": 3,
+  "Akuntansi Manajemen": 3,
+  "Ekonomi Syariah": 2,
+  "Statistik Deskriptif": 3,
+  "Perilaku Organisasi": 3,
+  "Akuntansi Perpajakan": 3,
+  "Akuntansi Keuangan Lanjutan 1": 3,
+  "Akuntansi Sektor Publik": 3,
+  "Teori Akuntansi": 2,
+  "Statistik Inferensial": 3,
+  "Sistem Informasi Manajemen": 3,
+  "Komunikasi Bisnis": 2,
+  "Akuntansi Lingkungan": 3,
+  "Internal Audit": 3,
+  "Akuntansi Keuangan Lanjutan 2": 3,
+  "Audit Investigasi dan Forensik": 3,
+  "Metodologi Penelitian": 3,
+  "Sistem Pengendalian Manajemen": 3,
+  "Etika Bisnis dan Profesi": 3,
+  "Bank dan Lembaga Keuangan": 3,
+  "Manajemen Keuangan": 3,
+  "Analisis Laporan Keuangan": 3,
+  "Pajak dan Retribusi": 3,
+  "Pengukuran Kinerja": 3,
+  "Komputer Akuntansi": 2,
+  "Sustainability Accounting": 3,
+  "Manajemen Strategik": 3,
+  "Manajemen Investasi": 2,
+  "Corporate Social Responsibility": 3,
+  "Manajemen Resiko": 3,
+  "Seminar Akuntansi Keuangan": 3,
+  "Corporate Governance": 3,
+  "Skripsi": null
+};
+
+function normalizeCourseKey(v){
+  return clean(v).toLowerCase()
+    .replace(/\s+/g,' ')
+    .replace(/[‐‑–—]/g,'-')
+    .trim();
+}
+
+const SKS_MASTER_NORMALIZED=Object.fromEntries(
+  Object.entries(SKS_MASTER).map(([k,v])=>[normalizeCourseKey(k),v])
+);
+
+function getSks(courseName){
+  const full=mkFullName(courseName);
+  const key=normalizeCourseKey(full);
+  return Object.prototype.hasOwnProperty.call(SKS_MASTER_NORMALIZED,key)
+    ? SKS_MASTER_NORMALIZED[key]
+    : '';
 }
 
 function mkHtml(name){
@@ -1300,8 +1385,8 @@ async function downloadExcel(){
         const sub=ws.getCell(row,1);
         sub.value=
           semester
-          ? `Semester ${semester} • ${classRows.length} mata kuliah • Nama MK sudah dinormalisasi`
-          : `${classRows.length} mata kuliah • Nama MK sudah dinormalisasi`;
+          ? `Semester ${semester} • ${classRows.length} mata kuliah • Nama MK & SKS sudah dinormalisasi`
+          : `${classRows.length} mata kuliah • Nama MK & SKS sudah dinormalisasi`;
 
         sub.font={
           name:'Arial',
@@ -1324,7 +1409,7 @@ async function downloadExcel(){
         const values=classRows.map((x,i)=>[
           i+1,
           mkFullName(x.mataKuliah),
-          x.sks,
+          getSks(x.mataKuliah),
           x.ruang,
           x.hari,
           x.jamKe,
