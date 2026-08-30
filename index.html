@@ -1172,7 +1172,7 @@ function displayDosen(){
             );
             const label=reg==='Reg C'?'Reg C / CS':reg;
             const scheduleCount=recapRows[reg].length;
-            const courseCount=recapCourses[reg].size;
+            const courseCount=recapCourseTotals[reg] || 0;
 
             return `
               <div class="recap-row">
