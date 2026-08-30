@@ -60,6 +60,10 @@ td.center{text-align:center}
 .ok-badge{background:#dcfce7;color:#166534}
 @media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.grid,.button-row{grid-template-columns:1fr}.header h1{font-size:25px}}
+
+.mk-full{line-height:1.35}
+.mk-code{font-size:.82em;color:#64748b;margin-top:3px}
+
 </style>
 </head>
 
@@ -195,6 +199,165 @@ const DOSEN_ALIAS={
   "AKBAR":"",
   "SALMA":""
 };
+
+/* =========================================================
+   MASTER MATA KULIAH
+   Sumber: TABEL_KODE_KELAS_DAN_MK_LENGKAP_SESUAI_FILE.xlsx
+   Kolom "Nama di Jadwal" -> "Nama Mata Kuliah Lengkap".
+   Catatan: file sumber tidak menyediakan kolom Kode MK
+   alfanumerik; yang tersedia adalah Kode Kelas dan Nama di Jadwal.
+   ========================================================= */
+const MK_MASTER={
+  "AGAMA": "AGAMA",
+  "AKUN JASA": "AKUNTANSI JASA",
+  "BASIC ENGLISH": "BASIC ENGLISH",
+  "ECONOMIC": "ECONOMIC",
+  "PANCASILA": "PANCASILA",
+  "PRICIPLES OF MANAGEMENT": "PRICIPLES OF MANAGEMENT",
+  "AK JASA": "AKUNTANSI JASA",
+  "TEKNOLOGI DASAR": "TEKNOLOGI INFORMASI",
+  "AK PERSH JASA": "AKUNTANSI JASA",
+  "PKN": "BAHASA INDONESIA",
+  "B.INDO": "BAHASA INDONESIA",
+  "B.INGGRIS 2": "BAHASA INGGRIS 2",
+  "MAKRO": "EKONOMI MAKRO",
+  "HBR": "HUKUM BISNIS DAN REGULASI",
+  "KEWIRAUSAHAAN": "KEWIRAUSAHAAN",
+  "PA 2": "PENGANTAR AKUNTANSI 2",
+  "APLIKOM": "PENGANTAR APLIKASI KOMPUTER",
+  "B INDO": "BAHASA INDONESIA",
+  "B ING 2": "BAHASA INGGRIS 2",
+  "PIE MAKRO": "EKONOMI MAKRO",
+  "AKBI": "AKUNTANSI BIAYA",
+  "AK 1": "AKUNTANSI KEUANGAN 1",
+  "AUDITING 1": "AUDITING 1",
+  "MANAJ PEMASARAN": "MANAJEMEN PEMASARAN",
+  "PREKIN": "PEREKONOMIAN INDONESIA",
+  "PERPAJAKAN 1": "PERPAJAKAN 1",
+  "SIA": "SISTEM INFORMASI AKUNTANSI",
+  "AUDITING": "AUDITING 1",
+  "MANJ PEMASARAN": "MANAJEMEN PEMASARAN",
+  "MNJ PEMSRN": "MANAJEMEN PEMASARAN",
+  "MNJ PEMASARN": "MANAJEMEN PEMASARAN",
+  "MNJ PEMASRN": "MANAJEMEN PEMASARAN",
+  "AK 2": "AKUNTANSI KEUANGAN 2",
+  "AKMEN": "AKUNTANSI MANAJEMEN",
+  "EK. SYARIAH": "EKONOMI SYARIAH",
+  "PRILAKU ORG": "PERILAKU ORGANISASI",
+  "STATISTIK DES": "STATISTIK DESKRIPTIF",
+  "EK SYARIAH": "EKONOMI SYARIAH",
+  "PRILAKU OR": "PERILAKU ORGANISASI",
+  "AK. LINGKUNGAN": "AKUNTANSI LINGKUNGAN",
+  "AK. PAJAK": "AKUNTANSI PERPAJAKAN",
+  "AK SEKTOR PUBLIK": "AKUNTANSI SEKTOR PUBLIK",
+  "KOMBIS": "KOMUNIKASI BISNIS",
+  "SIM": "SISTEM INFORMASI MANAJEMEN",
+  "INFERENSIAL": "STATISTIK INFERENSIAL",
+  "AKL 1": "AKUNTANSI KEUANGAN LANJUTAN 1",
+  "INTERNAL AUDIT": "INTERNAL AUDIT",
+  "TEORI AK": "TEORI AKUNTANSI",
+  "AK LINGKUNGAN": "AKUNTANSI LINGKUNGAN",
+  "AK.PERPJAKAN": "AKUNTANSI PERPAJAKAN",
+  "AK SEKTOR": "AKUNTANSI SEKTOR PUBLIK",
+  "TEORI AKUN": "TEORI AKUNTANSI",
+  "AKL 2": "AKUNTANSI KEUANGAN LANJUTAN 2",
+  "BLK": "BANK DAN LEMBAGA KEUANGAN",
+  "ETIKA BISNIS": "ETIKA BISNIS DAN PROFESI",
+  "MANJ  KEU": "MANAJEMEN KEUANGAN",
+  "METLIT": "METODELOGI PENELITIAN",
+  "PENG. KINERJA": "PENGUKURAN KINERJA",
+  "SPM": "SISTEM PENGENDALIAN MANAJEMEN",
+  "MANAJ KEUANGAN": "MANAJEMEN KEUANGAN",
+  "MANAJEMN KEU": "MANAJEMEN KEUANGAN",
+  "PAJAK& RETRIBUSI": "PAJAK DAN RETRIBUSI",
+  "AUDIT FORNSIK": "AUDIT INVESTIGASI DAN FORENSIK",
+  "ALK": "ANALISIS LAPORAN KEUANGAN",
+  "CSR": "CORPORATE SOCIAL RESPONSIBILITY",
+  "KOMPUTER AK": "KOMPUTER AKUNTANSI",
+  "MANJ INVES": "MANAJEMEN INVESTASI",
+  "MANAJ RESIKO": "MANAJEMEN RESIKO",
+  "MANJ STRATEGIK": "MANAJEMEN STRATEJIK",
+  "TAX PLANING": "TAX PLANNING",
+  "SUSTAIN": "SUSTAINABILITY ACCOUNTING",
+  "EDP AUDIT": "EDP AUDIT",
+  "MANAJ STRATEGIK": "MANAJEMEN STRATEJIK",
+  "TAX PLANNING": "TAX PLANNING",
+  "SUSTENIBILITY": "SUSTAINABILITY ACCOUNTING",
+  "MANJ INVESTASI": "MANAJEMEN INVESTASI",
+  "MNJ RESIKO": "MANAJEMEN RESIKO",
+  "SUSTAIN ACC": "SUSTAINABILITY ACCOUNTING",
+  "CORPORATE GOVERNANCE": "CORPORATE GORVENANCE",
+  "SEMINAR AKUNTANSI": "SEMINAR AKUNTANSI KEUANGAN",
+  "CORPORATE G": "CORPORATE GORVENANCE",
+  "SEMINR AK": "SEMINAR AKUNTANSI KEUANGAN",
+  "MATEMATIKA": "MATEMATIKA",
+  "AKUNTANSI JASA": "AKUNTANSI JASA",
+  "TEKNOLOGI INFORMASI": "TEKNOLOGI INFORMASI",
+  "PENGANTAR AKUNTANSI 2": "PENGANTAR AKUNTANSI 2",
+  "HUKUM BISNIS DAN REGULASI": "HUKUM BISNIS DAN REGULASI",
+  "EKONOMI MAKRO": "EKONOMI MAKRO",
+  "PENGANTAR APLIKASI KOMPUTER": "PENGANTAR APLIKASI KOMPUTER",
+  "BAHASA INGGRIS 2": "BAHASA INGGRIS 2",
+  "BAHASA INDONESIA": "BAHASA INDONESIA",
+  "AKUNTANSI KEUANGAN 1": "AKUNTANSI KEUANGAN 1",
+  "SISTEM INFORMASI AKUNTANSI": "SISTEM INFORMASI AKUNTANSI",
+  "AKUNTANSI BIAYA": "AKUNTANSI BIAYA",
+  "MANAJEMEN PEMASARAN": "MANAJEMEN PEMASARAN",
+  "PEREKONOMIAN INDONESIA": "PEREKONOMIAN INDONESIA",
+  "PERPAJAKAN 2": "PERPAJAKAN 2",
+  "AUDITING 2": "AUDITING 2",
+  "AKUNTANSI KEUANGAN 2": "AKUNTANSI KEUANGAN 2",
+  "AKUNTANSI MANAJEMEN": "AKUNTANSI MANAJEMEN",
+  "EKONOMI SYARIAH": "EKONOMI SYARIAH",
+  "STATISTIK DESKRIPTIF": "STATISTIK DESKRIPTIF",
+  "PERILAKU ORGANISASI": "PERILAKU ORGANISASI",
+  "AKUNTANSI PERPAJAKAN": "AKUNTANSI PERPAJAKAN",
+  "AKUNTANSI KEUANGAN LANJUTAN 1": "AKUNTANSI KEUANGAN LANJUTAN 1",
+  "AKUNTANSI SEKTOR PUBLIK": "AKUNTANSI SEKTOR PUBLIK",
+  "TEORI AKUNTANSI": "TEORI AKUNTANSI",
+  "STATISTIK INFERENSIAL": "STATISTIK INFERENSIAL",
+  "SISTEM INFORMASI MANAJEMEN": "SISTEM INFORMASI MANAJEMEN",
+  "KOMUNIKASI BISNIS": "KOMUNIKASI BISNIS",
+  "AKUNTANSI KEUANGAN LANJUTAN 2": "AKUNTANSI KEUANGAN LANJUTAN 2",
+  "AUDIT INVESTIGASI DAN FORENSIK": "AUDIT INVESTIGASI DAN FORENSIK",
+  "METODELOGI PENELITIAN": "METODELOGI PENELITIAN",
+  "SISTEM PENGENDALIAN MANAJEMEN": "SISTEM PENGENDALIAN MANAJEMEN",
+  "ETIKA BISNIS DAN PROFESI": "ETIKA BISNIS DAN PROFESI",
+  "BANK DAN LEMBAGA KEUANGAN": "BANK DAN LEMBAGA KEUANGAN",
+  "MANAJEMEN KEUANGAN": "MANAJEMEN KEUANGAN",
+  "KOMPUTER AKUNTANSI": "KOMPUTER AKUNTANSI",
+  "SUSTAINABILITY ACCOUNTING": "SUSTAINABILITY ACCOUNTING",
+  "ANALISIS LAPORAN KEUANGAN": "ANALISIS LAPORAN KEUANGAN",
+  "MANAJEMEN STRATEJIK": "MANAJEMEN STRATEJIK",
+  "MANAJEMEN INVESTASI": "MANAJEMEN INVESTASI",
+  "CORPORATE SOCIAL RESPONSIBILITY": "CORPORATE SOCIAL RESPONSIBILITY",
+  "MANAJEMEN RESIKO": "MANAJEMEN RESIKO",
+  "SEMINAR AKUNTANSI KEUANGAN": "SEMINAR AKUNTANSI KEUANGAN",
+  "CORPORATE GORVENANCE": "CORPORATE GORVENANCE",
+  "SKRIPSI": "SKRIPSI"
+};
+
+function mkFullName(name){
+  const raw=clean(name);
+  if(!raw) return '';
+  if(MK_MASTER[raw]) return MK_MASTER[raw];
+
+  const upper=raw.toUpperCase();
+  const key=Object.keys(MK_MASTER).find(k=>k.toUpperCase()===upper);
+  return key ? MK_MASTER[key] : raw;
+}
+
+function mkHtml(name){
+  const short=clean(name);
+  const full=mkFullName(short);
+
+  if(full && normalize(full)!==normalize(short)){
+    return `<div class="mk-full"><b>${escapeHtml(full)}</b></div>
+            <div class="mk-code">Nama di Excel: ${escapeHtml(short)}</div>`;
+  }
+
+  return `<div class="mk-full"><b>${escapeHtml(full || short)}</b></div>`;
+}
 
 function clean(v){
   if(v===null || v===undefined) return '';
@@ -688,7 +851,7 @@ function displayNormal(records){
         <thead>
           <tr>
             <th>NO</th>
-            <th>MATA KULIAH</th>
+            <th>MATA KULIAH LENGKAP</th>
             <th>SKS</th>
             <th>RUANG</th>
             <th>HARI / KETERANGAN</th>
@@ -703,7 +866,7 @@ function displayNormal(records){
       html+=`
           <tr>
             <td class="center">${i+1}</td>
-            <td>${escapeHtml(row.mataKuliah)}</td>
+            <td>${mkHtml(row.mataKuliah)}</td>
             <td class="center">${escapeHtml(row.sks)}</td>
             <td>${escapeHtml(row.ruang)}</td>
             <td>${escapeHtml(row.hari)}</td>
@@ -786,7 +949,7 @@ function displayDosen(){
           <thead>
             <tr>
               <th>NO</th>
-              <th>MATA KULIAH</th>
+              <th>MATA KULIAH LENGKAP</th>
               <th>HARI</th>
               <th>JAM KE</th>
               <th>WAKTU</th>
@@ -799,7 +962,7 @@ function displayDosen(){
         html+=`
           <tr>
             <td class="center">${i+1}</td>
-            <td>${escapeHtml(r.mataKuliah)}</td>
+            <td>${mkHtml(r.mataKuliah)}</td>
             <td>${escapeHtml(r.hari)}</td>
             <td class="center">${escapeHtml(r.jamKe)}</td>
             <td>${escapeHtml(r.waktu)}</td>
@@ -950,7 +1113,7 @@ function displayConflicts(){
             <tr>
               <th>REG</th>
               <th>KODE KELAS</th>
-              <th>MATA KULIAH</th>
+              <th>MATA KULIAH LENGKAP</th>
               <th>HARI</th>
               <th>JAM KE</th>
               <th>WAKTU</th>
@@ -1137,8 +1300,8 @@ async function downloadExcel(){
         const sub=ws.getCell(row,1);
         sub.value=
           semester
-          ? `Semester ${semester} • ${classRows.length} mata kuliah`
-          : `${classRows.length} mata kuliah`;
+          ? `Semester ${semester} • ${classRows.length} mata kuliah • Nama MK sudah dinormalisasi`
+          : `${classRows.length} mata kuliah • Nama MK sudah dinormalisasi`;
 
         sub.font={
           name:'Arial',
@@ -1160,7 +1323,7 @@ async function downloadExcel(){
 
         const values=classRows.map((x,i)=>[
           i+1,
-          x.mataKuliah,
+          mkFullName(x.mataKuliah),
           x.sks,
           x.ruang,
           x.hari,
