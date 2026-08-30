@@ -859,43 +859,46 @@ function findRegCMarkers(data){
   return markers;
 }
 
-function getTimeMap(data){
-  const map={};
-  const timeRe=/\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}/;
-
-  // Baca tabel jam dari sheet yang sedang diproses.
-  const scan=function(rows){
-    for(const row of rows){
-      for(let c=0;c<row.length;c++){
-        const v=clean(row[c]);
-        const m=v.match(timeRe);
-
-        if(m){
-          let jam='';
-          // Pada format Excel ini angka JAM KE berada di sekitar kolom waktu.
-          for(let k=Math.max(0,c-3);k<=c;k++){
-            const x=clean(row[k]);
-            if(/^\d+(\.0)?$/.test(x)) jam=String(parseInt(x,10));
-          }
-          if(jam) map[jam]=m[0].replace(/\s+/g,' ');
-        }
-      }
+function getTimeMap(data, reg){
+  // =========================================================
+  // MASTER WAKTU PER REGULER
+  // Reg A mengikuti waktu yang tertulis di Excel.
+  // Reg B dan Reg C memakai jadwal waktu khusus berikut.
+  // =========================================================
+  const REG_TIME_MAP={
+    'Reg B':{
+      '1':'18.20 - 20.00',
+      '2':'20.00 - 21.40'
+    },
+    'Reg C':{
+      '1':'07.40 - 09.20',
+      '2':'09.20 - 11.00',
+      '3':'11.00 - 13.50'
     }
   };
 
-  scan(data);
+  // Reg B dan Reg C HARUS menggunakan jam khusus di atas.
+  // Jangan mengambil waktu Reg A untuk keduanya.
+  if(REG_TIME_MAP[reg]) return {...REG_TIME_MAP[reg]};
 
-  // Reg B dan Reg CS pada file ini tidak menyimpan teks WAKTU di sheetnya.
-  // Jadwal jamnya sama dengan Reg A, sehingga gunakan Reg A sebagai sumber
-  // waktu bersama. Tidak mengubah JAM KE atau data jadwal B/CS.
-  if(Object.keys(map).length===0 && workbook && workbook.Sheets && workbook.Sheets['Reg A']){
-    const regAData=XLSX.utils.sheet_to_json(
-      workbook.Sheets['Reg A'],
-      {header:1,defval:'',raw:false}
-    );
-    scan(regAData);
+  // Reg A: baca waktu langsung dari sheet Reg A.
+  const map={};
+  const timeRe=/\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}/;
+
+  for(const row of data){
+    for(let c=0;c<row.length;c++){
+      const v=clean(row[c]);
+      const m=v.match(timeRe);
+      if(m){
+        let jam='';
+        for(let k=Math.max(0,c-3);k<=c;k++){
+          const x=clean(row[k]);
+          if(/^\d+(\.0)?$/.test(x)) jam=String(parseInt(x,10));
+        }
+        if(jam) map[jam]=m[0].replace(/\s+/g,' ');
+      }
+    }
   }
-
   return map;
 }
 
@@ -1053,7 +1056,7 @@ function extractSheet(sheet,reg){
 
   const slotRows=getSlotRows(data);
   const blocks=assignDayForBlocks(data,slotRows,reg);
-  const timeMap=getTimeMap(data);
+  const timeMap=getTimeMap(data,reg);
   const records=[];
 
   for(const cls of classCols){
