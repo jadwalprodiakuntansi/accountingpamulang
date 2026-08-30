@@ -58,6 +58,25 @@ td.center{text-align:center}
 .conflict-table{min-width:900px}
 .conflict-badge{background:#fee2e2;color:#991b1b}
 .ok-badge{background:#dcfce7;color:#166534}
+
+.teacher-summary{margin-top:20px}
+.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.summary-card{border:1px solid #e5e7eb;border-radius:14px;padding:18px;background:#f8fafc}
+.summary-card.summary-total{background:#111827;color:#fff;border-color:#111827}
+.summary-label{font-size:12px;font-weight:800;letter-spacing:.5px}
+.summary-number{font-size:32px;font-weight:800;line-height:1.15;margin-top:5px}
+.summary-note{font-size:13px;margin-top:3px;opacity:.75}
+.recap-detail{border:1px solid #e5e7eb;border-radius:14px;padding:18px;background:#fff}
+.recap-detail h3{margin:0 0 14px}
+.recap-list{display:flex;flex-direction:column;gap:12px}
+.recap-row{display:grid;grid-template-columns:180px 1fr;gap:15px;align-items:start;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb}
+.recap-reg{display:flex;flex-direction:column;gap:4px}
+.recap-reg span{font-size:12px;color:#64748b}
+.recap-codes{display:flex;gap:7px;flex-wrap:wrap}
+.class-pill{display:inline-block;padding:7px 10px;border-radius:999px;background:#e0f2fe;color:#075985;border:1px solid #bae6fd;font-size:13px;font-weight:700}
+.muted{color:#94a3b8;font-size:13px}
+@media(max-width:1100px){.summary-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.summary-grid{grid-template-columns:repeat(2,1fr)}.recap-row{grid-template-columns:1fr}}
 @media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.grid,.button-row{grid-template-columns:1fr}.header h1{font-size:25px}}
 
@@ -152,9 +171,9 @@ let displayedRecords=[];
 const DOSEN_MASTER={
   "IMAN":"Achmad Khusnul Iman, S.E., M.Ak.",
   "ACHMAD":"Achmad Khusnul Iman, S.E., M.Ak.",
-  "SUHERI":"Ahmad Syuheri, S.Ak., M.Ak.",
-  "ATA":"Akhmad Nofiata, S.E., M.Ak.",
-  "KHOLID":"Arif Wahyu Nur Kholid, S.Ak., M.Ak.",
+  "AHMAD":"Ahmad Syuheri, S.Ak., M.Ak.",
+  "AKHMAD":"Akhmad Nofiata, S.E., M.Ak.",
+  "ARIF":"Arif Wahyu Nur Kholid, S.Ak., M.Ak.",
   "ARIFATUN":"Arifatun Nasihah, S.Ak., M.Ak.",
   "AYU":"Ayu Septiana Putri, S.Ak., M.Ak.",
   "DIDIK":"Didik Setiawan, S.Ak., M.Ak.",
@@ -177,7 +196,7 @@ const DOSEN_MASTER={
   "RICHA":"Ricka Hidayati Chaniago, S.Ak., M.Ak.",
   "RIRIN":"Ririn Sari Dewi, S.E., M.Ak.",
   "RISMA":"Rismawati, S.E., M.Ak",
-  "RUPIANA":"Rupianna Tambunan, S.E., M.Ak",
+  "RUPIANNA":"Rupianna Tambunan, S.E., M.Ak",
   "SHALLY":"Shally Khomilah, S.E., M.Ak",
   "VANI":"Vani Vauliyanti, S.E., M.Ak.",
   "YAYAH":"Yayah Syahriyah, S.Ak., M.Ak.",
@@ -1027,11 +1046,74 @@ function displayDosen(){
 
   const full=teacherFullName(selected);
 
+  /* =====================================================
+     REKAP DOSEN PER REGULER
+     Contoh:
+     Reg A : 3 kelas
+     Reg B : 6 kelas
+     Reg C : 2 kelas
+     Total : 11 kelas
+     ===================================================== */
+  const recap={
+    'Reg A':new Set(),
+    'Reg B':new Set(),
+    'Reg C':new Set()
+  };
+
+  const recapRows={
+    'Reg A':[],
+    'Reg B':[],
+    'Reg C':[]
+  };
+
+  records.forEach(r=>{
+    if(!recap[r.reg]) return;
+    recap[r.reg].add(r.kodeKelas);
+    recapRows[r.reg].push(r);
+  });
+
+  const totalClasses=
+    recap['Reg A'].size+
+    recap['Reg B'].size+
+    recap['Reg C'].size;
+
+  /* Kumpulan data berdasarkan reguler + kode kelas */
   const classMap={};
 
   records.forEach(r=>{
-    if(!classMap[r.kodeKelas]) classMap[r.kodeKelas]=[];
-    classMap[r.kodeKelas].push(r);
+    const key=r.reg+'|'+r.kodeKelas;
+    if(!classMap[key]) classMap[key]=[];
+    classMap[key].push(r);
+  });
+
+  /* Hitung mata kuliah per kelas, lalu jumlahkan ke reguler.
+     Jadi bila dosen mengajar 6 kelas dan masing-masing 8 MK,
+     total riilnya = 48 mata kuliah/penugasan. */
+  const recapCourseTotals={'Reg A':0,'Reg B':0,'Reg C':0};
+  Object.keys(classMap).forEach(key=>{
+    const [reg]=key.split('|');
+    if(!recapCourseTotals.hasOwnProperty(reg)) return;
+    const uniqueCourses=new Set(
+      classMap[key]
+        .map(r=>normalizeCourseKey(r.mataKuliah || ''))
+        .filter(Boolean)
+    );
+    recapCourseTotals[reg]+=uniqueCourses.size;
+  });
+
+  const totalCourses=
+    recapCourseTotals['Reg A']+
+    recapCourseTotals['Reg B']+
+    recapCourseTotals['Reg C'];
+
+  /* Urutan reguler lalu kode kelas */
+  const classKeys=Object.keys(classMap).sort((a,b)=>{
+    const [regA,codeA]=a.split('|');
+    const [regB,codeB]=b.split('|');
+    const regOrder={'Reg A':1,'Reg B':2,'Reg C':3};
+    const regCmp=(regOrder[regA]||9)-(regOrder[regB]||9);
+    if(regCmp!==0) return regCmp;
+    return codeA.localeCompare(codeB,undefined,{numeric:true,sensitivity:'base'});
   });
 
   let html=`
@@ -1042,22 +1124,87 @@ function displayDosen(){
         <div class="small">
           Kode Excel: <b>${escapeHtml(selected)}</b>
           • ${records.length} jadwal
-          • ${Object.keys(classMap).length} kelas
+          • <b>${totalClasses} kelas total</b>
+          • <b>${totalCourses} mata kuliah total</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="teacher-summary">
+      <div class="summary-grid">
+        <div class="summary-card summary-total">
+          <div class="summary-label">TOTAL KELAS</div>
+          <div class="summary-number">${totalClasses}</div>
+          <div class="summary-note">Seluruh reguler</div>
+        </div>
+
+        <div class="summary-card summary-total" style="background:#1e293b">
+          <div class="summary-label">TOTAL MATA KULIAH</div>
+          <div class="summary-number">${totalCourses}</div>
+          <div class="summary-note">Mata kuliah unik</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-label">REG A</div>
+          <div class="summary-number">${recap['Reg A'].size}</div>
+          <div class="summary-note">kelas</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-label">REG B</div>
+          <div class="summary-number">${recap['Reg B'].size}</div>
+          <div class="summary-note">kelas</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-label">REG C / CS</div>
+          <div class="summary-number">${recap['Reg C'].size}</div>
+          <div class="summary-note">kelas</div>
+        </div>
+      </div>
+
+      <div class="recap-detail">
+        <h3>Rekap Kelas yang Diampu</h3>
+        <div class="recap-list">
+          ${['Reg A','Reg B','Reg C'].map(reg=>{
+            const codes=[...recap[reg]].sort((a,b)=>
+              a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'})
+            );
+            const label=reg==='Reg C'?'Reg C / CS':reg;
+            const scheduleCount=recapRows[reg].length;
+            const courseCount=recapCourses[reg].size;
+
+            return `
+              <div class="recap-row">
+                <div class="recap-reg">
+                  <b>${label}</b>
+                  <span><b>${codes.length} kelas</b> • <b>${courseCount} mata kuliah</b></span>
+                  <span>${scheduleCount} jadwal</span>
+                </div>
+                <div class="recap-codes">
+                  ${codes.length
+                    ? codes.map(code=>`<span class="class-pill">${escapeHtml(code)}</span>`).join('')
+                    : '<span class="muted">Tidak ada kelas</span>'}
+                </div>
+              </div>`;
+          }).join('')}
         </div>
       </div>
     </div>
   </div>`;
 
-  Object.keys(classMap)
-    .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}))
-    .forEach(code=>{
-      const rows=classMap[code];
+  classKeys.forEach(key=>{
+    const rows=sortClassRows(classMap[key]);
+    const [reg,code]=key.split('|');
+    const classCourses=new Set(
+      rows.map(r=>normalizeCourseKey(r.mataKuliah || '')).filter(Boolean)
+    );
 
-      html+=`
+    html+=`
       <div class="teacher-card">
-        <h3>${escapeHtml(rows[0].reg)} — ${escapeHtml(code)}</h3>
+        <h3>${escapeHtml(reg)} — ${escapeHtml(code)}</h3>
         <div class="teacher-meta">
-          ${rows.length} mata kuliah
+          <b>${classCourses.size} mata kuliah</b> • ${rows.length} jadwal
         </div>
 
         <div class="table-wrap">
@@ -1066,6 +1213,7 @@ function displayDosen(){
             <tr>
               <th>NO</th>
               <th>MATA KULIAH LENGKAP</th>
+              <th>SKS</th>
               <th>HARI</th>
               <th>JAM KE</th>
               <th>WAKTU</th>
@@ -1074,20 +1222,21 @@ function displayDosen(){
           </thead>
           <tbody>`;
 
-      rows.forEach((r,i)=>{
-        html+=`
+    rows.forEach((r,i)=>{
+      html+=`
           <tr>
             <td class="center">${i+1}</td>
             <td>${mkHtml(r.mataKuliah)}</td>
+            <td class="center">${escapeHtml(r.sks)}</td>
             <td>${escapeHtml(r.hari)}</td>
             <td class="center">${escapeHtml(r.jamKe)}</td>
             <td>${escapeHtml(r.waktu)}</td>
             <td>${escapeHtml(r.ruang)}</td>
           </tr>`;
-      });
-
-      html+=`</tbody></table></div></div>`;
     });
+
+    html+=`</tbody></table></div></div>`;
+  });
 
   result.innerHTML=html;
   downloadButton.disabled=false;
