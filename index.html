@@ -3,2016 +3,1323 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pengolah Jadwal Prodi Akuntansi</title>
+<title>Jadwal Prodi Akuntansi</title>
 
-<!-- Untuk membaca Excel -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<!-- Untuk membuat Excel hasil download yang rapi + tabel Excel -->
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<!-- Library Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f3f5f9;color:#111827}
-.header{background:#111827;color:#fff;text-align:center;padding:35px 20px}
-.header h1{margin:0;font-size:34px}
-.header p{margin:10px 0 0;color:#d1d5db;font-size:18px}
-.container{max-width:1500px;margin:35px auto;padding:0 20px}
-.card{background:#fff;padding:28px;margin-bottom:25px;border-radius:18px;box-shadow:0 5px 20px rgba(0,0,0,.08)}
-h2{margin-top:0}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-label{display:block;font-weight:700;margin-bottom:8px}
-input,select,button{width:100%;padding:14px;border-radius:10px;border:1px solid #d1d5db;font-size:16px}
-input:disabled,select:disabled{background:#f3f4f6;color:#9ca3af}
-button{background:#111827;color:#fff;font-weight:700;cursor:pointer;border:0}
-button:hover{background:#1f2937}
-button:disabled{opacity:.5;cursor:not-allowed}
-.button-row{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:18px}
-.download{background:#166534}
-.download:hover{background:#14532d}
-.success,.error,.info{padding:14px;border-radius:10px;margin-top:18px}
-.success{background:#dcfce7;color:#166534}
-.error{background:#fee2e2;color:#991b1b}
-.info{background:#e0f2fe;color:#075985}
-.table-card{background:#fff;padding:25px;margin-bottom:28px;border-radius:18px;box-shadow:0 5px 20px rgba(0,0,0,.08);overflow-x:auto}
-.toolbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px;flex-wrap:wrap}
-.toolbar h2{margin:0}
-.small{color:#6b7280;line-height:1.55}
-.table-wrap{overflow:auto}
-table{width:100%;border-collapse:collapse;min-width:1150px}
-th{background:#111827;color:#fff;padding:13px;text-align:center;position:sticky;top:0}
-td{padding:11px;border:1px solid #d1d5db;vertical-align:top}
-td.center{text-align:center}
-.reg-badge{font-weight:700;white-space:nowrap}
-.empty{padding:35px;text-align:center;color:#6b7280}
-.teacher-name{font-weight:700}
-.teacher-code{font-size:12px;color:#64748b;margin-top:4px}
-.teacher-card{border:1px solid #e5e7eb;border-radius:14px;padding:18px;margin:0 0 20px;background:#fff}
-.teacher-card h3{margin:0 0 5px}
-.teacher-meta{color:#64748b;margin-bottom:14px}
-.teacher-table{min-width:900px}
-.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#e5e7eb;font-weight:700;font-size:12px}
-.conflict-card{border:1px solid #fecaca;border-left:6px solid #dc2626;border-radius:14px;padding:18px;margin:0 0 18px;background:#fff}
-.conflict-title{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap;margin-bottom:12px}
-.conflict-title h3{margin:0;color:#991b1b}
-.conflict-meta{color:#64748b;margin-top:4px}
-.conflict-table{min-width:900px}
-.conflict-badge{background:#fee2e2;color:#991b1b}
-.ok-badge{background:#dcfce7;color:#166534}
-
-.teacher-summary{margin-top:20px}
-.summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
-.summary-card{border:1px solid #e5e7eb;border-radius:14px;padding:18px;background:#f8fafc}
-.summary-card.summary-total{background:#111827;color:#fff;border-color:#111827}
-.summary-label{font-size:12px;font-weight:800;letter-spacing:.5px}
-.summary-number{font-size:32px;font-weight:800;line-height:1.15;margin-top:5px}
-.summary-note{font-size:13px;margin-top:3px;opacity:.75}
-.recap-detail{border:1px solid #e5e7eb;border-radius:14px;padding:18px;background:#fff}
-.recap-detail h3{margin:0 0 14px}
-.recap-list{display:flex;flex-direction:column;gap:12px}
-.recap-row{display:grid;grid-template-columns:180px 1fr;gap:15px;align-items:start;padding:14px;border-radius:12px;background:#f8fafc;border:1px solid #e5e7eb}
-.recap-reg{display:flex;flex-direction:column;gap:4px}
-.recap-reg span{font-size:12px;color:#64748b}
-.recap-codes{display:flex;gap:7px;flex-wrap:wrap}
-.class-pill{display:inline-block;padding:7px 10px;border-radius:999px;background:#e0f2fe;color:#075985;border:1px solid #bae6fd;font-size:13px;font-weight:700}
-.muted{color:#94a3b8;font-size:13px}
-@media(max-width:1100px){.summary-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:700px){.summary-grid{grid-template-columns:repeat(2,1fr)}.recap-row{grid-template-columns:1fr}}
-@media(max-width:1000px){.grid{grid-template-columns:1fr 1fr}}
-@media(max-width:700px){.grid,.button-row{grid-template-columns:1fr}.header h1{font-size:25px}}
-
-.mk-full{line-height:1.35}
-.mk-code{font-size:.82em;color:#64748b;margin-top:3px}
-
+    *{box-sizing:border-box}
+    body{
+        margin:0;
+        font-family:Arial,Helvetica,sans-serif;
+        background:#eef2f7;
+        color:#111827;
+    }
+    .wrap{max-width:1500px;margin:30px auto;padding:0 20px}
+    .card{
+        background:#fff;
+        border-radius:18px;
+        padding:28px;
+        margin-bottom:22px;
+        box-shadow:0 8px 25px rgba(15,23,42,.08);
+    }
+    h1{margin:0 0 8px;font-size:32px}
+    h2{margin:0 0 20px;font-size:25px}
+    h3{margin:0}
+    .muted{color:#64748b}
+    .grid{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:18px;
+    }
+    label{font-weight:700;display:block;margin-bottom:8px}
+    input[type=file],select{
+        width:100%;
+        padding:13px;
+        border:1px solid #cbd5e1;
+        border-radius:10px;
+        background:#fff;
+        font-size:15px;
+    }
+    .controls{
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:15px;
+        margin-top:18px;
+    }
+    button{
+        border:0;
+        border-radius:11px;
+        padding:14px 18px;
+        font-size:16px;
+        font-weight:700;
+        cursor:pointer;
+    }
+    .btn-dark{background:#111827;color:#fff}
+    .btn-green{background:#15803d;color:#fff}
+    .btn-blue{background:#2563eb;color:#fff}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .msg{
+        padding:14px 17px;
+        border-radius:11px;
+        margin-top:16px;
+        display:none;
+    }
+    .ok{display:block;background:#dcfce7;color:#166534}
+    .err{display:block;background:#fee2e2;color:#991b1b}
+    .info{display:block;background:#e0f2fe;color:#075985}
+    .summary-grid{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:14px;
+        margin-top:18px;
+    }
+    .stat{
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:13px;
+        padding:16px;
+    }
+    .stat .num{font-size:26px;font-weight:800;margin-top:4px}
+    .search-row{
+        display:grid;
+        grid-template-columns:1fr auto;
+        gap:12px;
+        margin-bottom:15px;
+    }
+    .search-row input{
+        padding:14px;
+        border:1px solid #cbd5e1;
+        border-radius:10px;
+        font-size:16px;
+    }
+    .table-wrap{overflow:auto}
+    table{
+        width:100%;
+        border-collapse:collapse;
+        min-width:1000px;
+    }
+    th{
+        background:#111827;
+        color:#fff;
+        padding:12px 10px;
+        text-align:left;
+        white-space:nowrap;
+    }
+    td{
+        border:1px solid #dbe1e8;
+        padding:10px;
+        vertical-align:top;
+    }
+    .badge{
+        display:inline-block;
+        padding:4px 8px;
+        border-radius:999px;
+        background:#e2e8f0;
+        font-size:12px;
+        font-weight:700;
+    }
+    .danger{
+        background:#fee2e2;
+        color:#991b1b;
+        font-weight:700;
+    }
+    .class-card{
+        margin-top:25px;
+        border:1px solid #e2e8f0;
+        border-radius:16px;
+        overflow:hidden;
+    }
+    .class-head{
+        padding:18px 20px;
+        background:#f8fafc;
+        border-bottom:1px solid #e2e8f0;
+    }
+    .class-head h3{font-size:24px}
+    .class-meta{
+        margin-top:7px;
+        color:#64748b;
+        font-size:15px;
+    }
+    .class-meta b{color:#475569}
+    .empty{padding:30px;text-align:center;color:#64748b}
+    .small{font-size:13px}
+    @media(max-width:900px){
+        .grid,.controls,.summary-grid{grid-template-columns:1fr}
+    }
 </style>
 </head>
 
 <body>
-<div class="header">
-  <h1>Pengolah Jadwal Prodi Akuntansi</h1>
-  <p>Upload Excel → pilih reguler → cari kelas/dosen → tampilkan → download Excel</p>
-</div>
+<div class="wrap">
 
-<div class="container">
-
-  <div class="card">
-    <h2>1. Upload File Excel</h2>
-    <input type="file" id="excelFile" accept=".xlsx,.xls">
-    <div id="fileStatus"></div>
-    <div class="small" style="margin-top:10px">
-      Struktur mengikuti sheet <b>Reg A</b>, <b>Reg B</b>, dan <b>Reg CS</b>.
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>2. Pilih Tampilan</h2>
-
-    <div class="grid">
-      <div>
-        <label>Reguler</label>
-        <select id="regSelect" disabled>
-          <option value="">Upload Excel terlebih dahulu</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Mode Tampilan</label>
-        <select id="modeSelect" disabled>
-          <option value="single">Satu kelas</option>
-          <option value="all">Semua kelas</option>
-          <option value="dosen">Cari dosen</option>
-          <option value="conflict">Cek bentrok dosen</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Nama Dosen</label>
-        <select id="dosenSelect" disabled>
-          <option value="">Pilih dosen</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Kode Kelas</label>
-        <select id="classSelect" disabled>
-          <option value="">Pilih kelas</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Tampilan Nama Dosen</label>
-        <select id="nameMode" disabled>
-          <option value="full">Nama lengkap</option>
-          <option value="short">Nama sesuai Excel</option>
-        </select>
-      </div>
+    <div class="card">
+        <h1>Jadwal Prodi Akuntansi</h1>
+        <div class="muted">
+            Upload jadwal utama + Excel pasangan <b>Kode Kelas → Ruang</b>.
+            Data ruang akan otomatis ditempel ke kelas yang sesuai.
+        </div>
     </div>
 
-    <div class="button-row">
-      <button id="showButton" disabled>Tampilkan Jadwal</button>
-      <button id="downloadButton" class="download" disabled>Download Excel</button>
+    <div class="card">
+        <h2>1. Upload Data Excel</h2>
+
+        <div class="grid">
+            <div>
+                <label>Excel Jadwal Perkuliahan</label>
+                <input id="scheduleFile" type="file" accept=".xlsx,.xls,.xlsm">
+                <div class="small muted" style="margin-top:7px">
+                    Sheet yang dibaca: Reg A, Reg B, Reg CS / Reg C.
+                </div>
+            </div>
+
+            <div>
+                <label>Excel Kode Kelas & Ruangan</label>
+                <input id="roomFile" type="file" accept=".xlsx,.xls,.xlsm">
+                <div class="small muted" style="margin-top:7px">
+                    Minimal berisi kolom <b>Kode Kelas</b> dan <b>Ruang</b>.
+                    Contoh: 01AKSP001 | R.101
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-blue" style="margin-top:18px" onclick="loadAllFiles()">
+            Baca & Gabungkan Data
+        </button>
+
+        <div id="uploadMsg" class="msg"></div>
+
+        <div id="stats" class="summary-grid" style="display:none">
+            <div class="stat"><div class="muted">Total Jadwal</div><div id="statRows" class="num">0</div></div>
+            <div class="stat"><div class="muted">Reg A</div><div id="statA" class="num">0</div></div>
+            <div class="stat"><div class="muted">Reg B</div><div id="statB" class="num">0</div></div>
+            <div class="stat"><div class="muted">Reg C/CS</div><div id="statC" class="num">0</div></div>
+        </div>
     </div>
 
-    <div id="classStatus"></div>
-  </div>
+    <div class="card">
+        <h2>2. Pilih Tampilan</h2>
 
-  <div id="result"></div>
+        <div class="controls">
+            <div>
+                <label>Reguler</label>
+                <select id="regSelect" onchange="refreshControls()">
+                    <option value="ALL">Semua Reg (A + B + C)</option>
+                    <option value="A">Reg A</option>
+                    <option value="B">Reg B</option>
+                    <option value="C">Reg C/CS</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Mode Tampilan</label>
+                <select id="modeSelect" onchange="refreshControls()">
+                    <option value="ALL">Semua kelas</option>
+                    <option value="CLASS">Cari kode kelas</option>
+                    <option value="LECTURER">Cari dosen</option>
+                </select>
+            </div>
+
+            <div id="classBox">
+                <label>Kode Kelas</label>
+                <select id="classSelect">
+                    <option value="">Semua Kelas</option>
+                </select>
+            </div>
+
+            <div id="lecturerBox" style="display:none">
+                <label>Nama Dosen</label>
+                <select id="lecturerSelect">
+                    <option value="">Pilih nama dosen</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Tampilan Nama Dosen</label>
+                <select id="lecturerDisplay" onchange="renderCurrent()">
+                    <option value="FULL">Nama lengkap</option>
+                    <option value="CODE">Kode dosen</option>
+                    <option value="BOTH">Nama + kode</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-dark" onclick="renderCurrent()">Tampilkan Jadwal</button>
+            <button id="downloadBtn" class="btn-green" onclick="downloadExcel()" disabled>
+                Download Excel Rapi
+            </button>
+        </div>
+
+        <div id="viewMsg" class="msg"></div>
+    </div>
+
+    <div class="card" id="lecturerSummaryCard" style="display:none">
+        <h2>Rekap Dosen</h2>
+        <div id="lecturerSummary"></div>
+    </div>
+
+    <div class="card">
+        <h2>Hasil Jadwal</h2>
+        <div id="result"></div>
+    </div>
+
 </div>
 
 <script>
-let workbook=null;
-let allRecords=[];
-let displayedRecords=[];
-let ROOM_MASTER={};
-
 /* =========================================================
-   MASTER DOSEN
-   Kode mengikuti nama/kode yang biasa muncul di Excel.
-   Nama lengkap mengikuti daftar master yang diberikan.
+   DATA MASTER DOSEN
    ========================================================= */
-const DOSEN_MASTER={
-  "IMAN":"Achmad Khusnul Iman, S.E., M.Ak.",
-  "ACHMAD":"Achmad Khusnul Iman, S.E., M.Ak.",
-  "AHMAD":"Ahmad Syuheri, S.Ak., M.Ak.",
-  "AKHMAD":"Akhmad Nofiata, S.E., M.Ak.",
-  "ARIF":"Arif Wahyu Nur Kholid, S.Ak., M.Ak.",
-  "ARIFATUN":"Arifatun Nasihah, S.Ak., M.Ak.",
-  "AYU":"Ayu Septiana Putri, S.Ak., M.Ak.",
-  "DIDIK":"Didik Setiawan, S.Ak., M.Ak.",
-  "DWI":"Dwi Fitrianingsih, S.E., M.Ak.",
-  "EKO":"Eko Pujiyono, S.E., M.Ak.",
-  "ERIMINA":"Erimina Halawa, S.Ak., M.Ak",
-  "FADLI":"Fadli Nuryasin, S.E., M.Ak.",
-  "INDAH":"Indah Kristianti, S.Ak., M.Ak.",
-  "INGGA":"Ingga Maulana, S.Ak., M.Ak.",
-  "IRNA":"Irna Maya Sari, S.E., M.Ak",
-  "IROH":"Iroh Rahmawati, S.E., M.Ak.",
-  "KAHFI":"Kahfi Fikrianoor, S.E., M.Sc",
-  "LAMSAH":"Lamsah, S.E., M.M., M.Ak.",
-  "LISTIA":"Listia Aulia Indy, S.Ak., M.Ak",
-  "RIZKY":"Muchamad Rizky Fauzy, S.E., M.Tre",
-  "NISTRI":"Nistri Kusumawardari, S.E., M.Ak",
-  "NISTRI KUSUMAWARDANI":"Nistri Kusumawardani, S.E., M.Ak",
-  "RAHADIAN":"Rahadian Amrullah, S.Pd., M.Ak",
-  "RICKA":"Ricka Hidayati Chaniago, S.Ak., M.Ak.",
-  "RICHA":"Ricka Hidayati Chaniago, S.Ak., M.Ak.",
-  "RIRIN":"Ririn Sari Dewi, S.E., M.Ak.",
-  "RISMA":"Rismawati, S.E., M.Ak",
-  "RUPIANNA":"Rupianna Tambunan, S.E., M.Ak",
-  "SHALLY":"Shally Khomilah, S.E., M.Ak",
-  "VANI":"Vani Vauliyanti, S.E., M.Ak.",
-  "YAYAH":"Yayah Syahriyah, S.Ak., M.Ak.",
-  "YUDHA":"Yudha Eka Febrian, S.E., M.Ak.",
-  "YULI":"Yuliyanti, S.Pd., M.Pd",
-  "KARINA":"Karina Elsani, S.Ak., M.Ak.",
-  "TIYAS":"Tiyas Puji Utami, S.Ak., M.Ak."
-};
-
-/* Alias tambahan supaya pencarian tetap menemukan kode Excel. */
-const DOSEN_ALIAS={
-  "EUIS":"",
-  "YULI":"Yuliyanti, S.Pd., M.Pd",
-  "EKO":"Eko Pujiyono, S.E., M.Ak.",
-  "INGGA":"Ingga Maulana, S.Ak., M.Ak.",
-  "IRIN":"Ririn Sari Dewi, S.E., M.Ak.",
-  "ARIFATUN":"Arifatun Nasihah, S.Ak., M.Ak.",
-  "RAHADIAN":"Rahadian Amrullah, S.Pd., M.Ak",
-  "AKBAR":"",
-  "SALMA":""
+const DOSEN = {
+    "IMAN": "Achmad Khusnul Iman, S.E., M.Ak.",
+    "AHMAD": "Ahmad Syuheri, S.Ak., M.Ak.",
+    "AKHMAD": "Akhmad Nofiata, S.E., M.Ak.",
+    "ARIFATUN": "Arifatun Nasihah, S.Ak., M.Ak.",
+    "ARIF": "Arif Wahyu Nur Kholid, S.Ak., M.Ak.",
+    "AYU": "Ayu Septiana Putri, S.Ak., M.Ak.",
+    "DIDIK": "Didik Setiawan, S.Ak., M.Ak.",
+    "DWI": "Dwi Fitrianingsih, S.E., M.Ak.",
+    "EKO": "Eko Pujiyono, S.E., M.Ak.",
+    "ERIMINA": "Erimina Halawa, S.Ak., M.Ak.",
+    "FADLI": "Fadli Nuryasin, S.E., M.Ak.",
+    "INDAH": "Indah Kristianti, S.Ak., M.Ak.",
+    "INGGA": "Ingga Maulana, S.Ak., M.Ak.",
+    "IRNA": "Irna Maya Sari, S.E., M.Ak.",
+    "IROH": "Iroh Rahmawati, S.E., M.Ak.",
+    "KAHFI": "Kahfi Fikrianoor, S.E., M.Sc",
+    "Lamsah": "Lamsah, S.E., M.M., M.Ak.",
+    "LISTIA": "Listia Aulia Indy, S.Ak., M.Ak.",
+    "RIZKY": "Muchamad Rizky Fauzy, S.E., M.Tre",
+    "NISTRI": "Nistri Kusumawardani, S.E., M.Ak.",
+    "RAHADIAN": "Rahadian Amrullah, S.Pd., M.Ak.",
+    "RICKA": "Ricka Hidayati Chaniago, S.Ak., M.Ak.",
+    "RIRIN": "Ririn Sari Dewi, S.E., M.Ak.",
+    "RISMA": "Rismawati, S.E., M.Ak.",
+    "RUPIANNA": "Rupianna Tambunan, S.E., M.Ak.",
+    "SHALLY": "Shally Khomilah, S.E., M.Ak.",
+    "VANI": "Vani Vauliyanti, S.E., M.Ak.",
+    "YAYAH": "Yayah Syahriyah, S.Ak., M.Ak.",
+    "YUDHA": "Yudha Eka Febrian, S.E., M.Ak.",
+    "YULI": "Yuliyanti, S.Pd., M.Pd",
+    "KARINA": "Karina Elsani, S.Ak., M.Ak.",
+    "TIYAS": "Tiyas Puji Utami, S.Ak., M.Ak."
 };
 
 /* =========================================================
-   MASTER MATA KULIAH
-   Sumber: TABEL_KODE_KELAS_DAN_MK_LENGKAP_SESUAI_FILE.xlsx
-   Kolom "Nama di Jadwal" -> "Nama Mata Kuliah Lengkap".
-   Catatan: file sumber tidak menyediakan kolom Kode MK
-   alfanumerik; yang tersedia adalah Kode Kelas dan Nama di Jadwal.
+   MASTER MATA KULIAH + SKS
+   Kunci dibuat fleksibel supaya nama di Excel bisa berbeda.
    ========================================================= */
-const MK_MASTER={
-  // SEMESTER 1
-  "AGAMA":"Pendidikan Agama",
-  "PENDIDIKAN AGAMA":"Pendidikan Agama",
-  "PANCASILA":"Pendidikan Pancasila",
-  "PENDIDIKAN PANCASILA":"Pendidikan Pancasila",
-  "BASIC ENGLISH":"Bahasa Inggris 1",
-  "BAHASA INGGRIS 1":"Bahasa Inggris 1",
-  "MATEMATIKA":"Matematika Ekonomi",
-  "MATEMATIKA EKONOMI":"Matematika Ekonomi",
-  "ECONOMIC":"Pengantar Ilmu Ekonomi Mikro",
-  "PIE MIKRO":"Pengantar Ilmu Ekonomi Mikro",
-  "PENGANTAR ILMU EKONOMI MIKRO":"Pengantar Ilmu Ekonomi Mikro",
-  "AKUN JASA":"Pengantar Akuntansi 1",
-  "AK JASA":"Pengantar Akuntansi 1",
-  "AK PERSH JASA":"Pengantar Akuntansi 1",
-  "PENGANTAR AKUNTANSI 1":"Pengantar Akuntansi 1",
-  "PENGANTAR BISNIS":"Pengantar Bisnis",
-  "PRICIPLES OF MANAGEMENT":"Pengantar Manajemen",
-  "PRINCIPLES OF MANAGEMENT":"Pengantar Manajemen",
-  "PENGANTAR MANAJEMEN":"Pengantar Manajemen",
-
-  // SEMESTER 2
-  "PA 2":"Pengantar Akuntansi 2",
-  "PENGANTAR AKUNTANSI 2":"Pengantar Akuntansi 2",
-  "HBR":"Hukum Bisnis dan Regulasi",
-  "HUKUM BISNIS DAN REGULASI":"Hukum Bisnis dan Regulasi",
-  "MAKRO":"Ekonomi Makro",
-  "PIE MAKRO":"Ekonomi Makro",
-  "ECONOMI MAKRO":"Ekonomi Makro",
-  "EKONOMI MAKRO":"Ekonomi Makro",
-  "KEWIRAUSAHAAN":"Kewirausahaan",
-  "APLIKOM":"Pengantar Aplikasi Komputer",
-  "PENGANTAR APLIKASI KOMPUTER":"Pengantar Aplikasi Komputer",
-  "B.INGGRIS 2":"Bahasa Inggris 2",
-  "B ING 2":"Bahasa Inggris 2",
-  "BAHASA INGGRIS 2":"Bahasa Inggris 2",
-  "B.INDO":"Bahasa Indonesia",
-  "B INDO":"Bahasa Indonesia",
-  "BAHASA INDONESIA":"Bahasa Indonesia",
-  "PKN":"Kewarganegaraan",
-  "KEWARGANEGARAAN":"Kewarganegaraan",
-
-  // SEMESTER 3
-  "PERPAJAKAN 1":"Perpajakan 1",
-  "AUDITING":"Auditing 1",
-  "AUDITING 1":"Auditing 1",
-  "AK 1":"Akuntansi Keuangan 1",
-  "AKUNTANSI KEUANGAN 1":"Akuntansi Keuangan 1",
-  "SIA":"Sistem Informasi Akuntansi",
-  "SISTEM INFORMASI AKUNTANSI":"Sistem Informasi Akuntansi",
-  "AKBI":"Akuntansi Biaya",
-  "AKUNTANSI BIAYA":"Akuntansi Biaya",
-  "MANAJ PEMASARAN":"Manajemen Pemasaran",
-  "MANJ PEMASARAN":"Manajemen Pemasaran",
-  "MNJ PEMSRN":"Manajemen Pemasaran",
-  "MNJ PEMASARN":"Manajemen Pemasaran",
-  "MNJ PEMASRN":"Manajemen Pemasaran",
-  "MANAJEMEN PEMASARAN":"Manajemen Pemasaran",
-  "PREKIN":"Perekonomian Indonesia",
-  "PEREKONOMIAN INDONESIA":"Perekonomian Indonesia",
-
-  // SEMESTER 4
-  "PERPAJAKAN 2":"Perpajakan 2",
-  "AUDITING 2":"Auditing 2",
-  "AK 2":"Akuntansi Keuangan 2",
-  "AKUNTANSI KEUANGAN 2":"Akuntansi Keuangan 2",
-  "AKMEN":"Akuntansi Manajemen",
-  "AKUNTANSI MANAJEMEN":"Akuntansi Manajemen",
-  "EK. SYARIAH":"Ekonomi Syariah",
-  "EK SYARIAH":"Ekonomi Syariah",
-  "EKONOMI SYARIAH":"Ekonomi Syariah",
-  "STATISTIK DES":"Statistik Deskriptif",
-  "STATISTIK DESKRIPTIF":"Statistik Deskriptif",
-  "PRILAKU ORG":"Perilaku Organisasi",
-  "PRILAKU OR":"Perilaku Organisasi",
-  "PERILAKU ORGANISASI":"Perilaku Organisasi",
-
-  // SEMESTER 5
-  "AK. PAJAK":"Akuntansi Perpajakan",
-  "AK.PERPJAKAN":"Akuntansi Perpajakan",
-  "AKUNTANSI PERPAJAKAN":"Akuntansi Perpajakan",
-  "AKL 1":"Akuntansi Keuangan Lanjutan 1",
-  "AKUNTANSI KEUANGAN LANJUTAN 1":"Akuntansi Keuangan Lanjutan 1",
-  "AK SEKTOR PUBLIK":"Akuntansi Sektor Publik",
-  "AK SEKTOR":"Akuntansi Sektor Publik",
-  "AKUNTANSI SEKTOR PUBLIK":"Akuntansi Sektor Publik",
-  "TEORI AK":"Teori Akuntansi",
-  "TEORI AKUN":"Teori Akuntansi",
-  "TEORI AKUNTANSI":"Teori Akuntansi",
-  "INFERENSIAL":"Statistik Inferensial",
-  "STATISTIK INFERENSIAL":"Statistik Inferensial",
-  "SIM":"Sistem Informasi Manajemen",
-  "SISTEM INFORMASI MANAJEMEN":"Sistem Informasi Manajemen",
-  "KOMBIS":"Komunikasi Bisnis",
-  "KOMUNIKASI BISNIS":"Komunikasi Bisnis",
-  "AK. LINGKUNGAN":"Akuntansi Lingkungan",
-  "AK LINGKUNGAN":"Akuntansi Lingkungan",
-  "AKUNTANSI LINGKUNGAN":"Akuntansi Lingkungan",
-  "INTERNAL AUDIT":"Internal Audit",
-
-  // SEMESTER 6
-  "AKL 2":"Akuntansi Keuangan Lanjutan 2",
-  "AKUNTANSI KEUANGAN LANJUTAN 2":"Akuntansi Keuangan Lanjutan 2",
-  "AUDIT FORNSIK":"Audit Investigasi dan Forensik",
-  "AUDIT INVESTIGASI DAN FORENSIK":"Audit Investigasi dan Forensik",
-  "METLIT":"Metodologi Penelitian",
-  "METODOLOGI PENELITIAN":"Metodologi Penelitian",
-  "METODELOGI PENELITIAN":"Metodologi Penelitian",
-  "SPM":"Sistem Pengendalian Manajemen",
-  "SISTEM PENGENDALIAN MANAJEMEN":"Sistem Pengendalian Manajemen",
-  "ETIKA BISNIS":"Etika Bisnis dan Profesi",
-  "ETIKA BISNIS DAN PROFESI":"Etika Bisnis dan Profesi",
-  "BLK":"Bank dan Lembaga Keuangan",
-  "BANK DAN LEMBAGA KEUANGAN":"Bank dan Lembaga Keuangan",
-  "MANJ KEU":"Manajemen Keuangan",
-  "MANAJ KEUANGAN":"Manajemen Keuangan",
-  "MANAJEMEN KEUANGAN":"Manajemen Keuangan",
-  "MANAJEMN KEU":"Manajemen Keuangan",
-  "ALK":"Analisis Laporan Keuangan",
-  "ANALISIS LAPORAN KEUANGAN":"Analisis Laporan Keuangan",
-  "PAJAK& RETRIBUSI":"Pajak dan Retribusi",
-  "PAJAK DAN RETRIBUSI":"Pajak dan Retribusi",
-  "PENG. KINERJA":"Pengukuran Kinerja",
-  "PENGUKURAN KINERJA":"Pengukuran Kinerja",
-
-  // SEMESTER 7
-  "KOMPUTER AK":"Komputer Akuntansi",
-  "KOMPUTER AKUNTANSI":"Komputer Akuntansi",
-  "SUSTAIN":"Sustainability Accounting",
-  "SUSTENIBILITY":"Sustainability Accounting",
-  "SUSTAIN ACC":"Sustainability Accounting",
-  "SUSTAINABILITY ACCOUNTING":"Sustainability Accounting",
-  "MANJ STRATEGIK":"Manajemen Strategik",
-  "MANAJ STRATEGIK":"Manajemen Strategik",
-  "MANAJEMEN STRATEGIK":"Manajemen Strategik",
-  "MANJ INVES":"Manajemen Investasi",
-  "MANAJEMEN INVESTASI":"Manajemen Investasi",
-  "CSR":"Corporate Social Responsibility",
-  "CORPORATE SOCIAL RESPONSIBILITY":"Corporate Social Responsibility",
-  "MANAJ RESIKO":"Manajemen Resiko",
-  "MNJ RESIKO":"Manajemen Resiko",
-  "MANAJEMEN RESIKO":"Manajemen Resiko",
-
-  // SEMESTER 8
-  "SEMINAR AKUNTANSI":"Seminar Akuntansi Keuangan",
-  "SEMINR AK":"Seminar Akuntansi Keuangan",
-  "SEMINAR AKUNTANSI KEUANGAN":"Seminar Akuntansi Keuangan",
-  "CORPORATE G":"Corporate Governance",
-  "CORPORATE GOVERNANCE":"Corporate Governance",
-  "CORPORATE GORVENANCE":"Corporate Governance",
-  "SKRIPSI":"Skripsi",
-
-  // Nama yang sudah lengkap dari Excel
-  "AKUNTANSI JASA":"Pengantar Akuntansi 1",
-  "TEKNOLOGI INFORMASI":"Teknologi Informasi",
-  "TEKNOLOGI DASAR":"Teknologi Informasi"
+const MK = {
+    "AGAMA": ["Pendidikan Agama",2],
+    "PANCASILA": ["Pendidikan Pancasila",2],
+    "BASIC ENGLISH": ["Bahasa Inggris 1",2],
+    "MATEMATIKA": ["Matematika Ekonomi",3],
+    "ECONOMIC": ["Pengantar Ilmu Ekonomi Mikro",2],
+    "AKUN JASA": ["Pengantar Akuntansi 1",3],
+    "AKUNTANSI JASA": ["Pengantar Akuntansi 1",3],
+    "PRICIPLES OF MANAGEMENT": ["Pengantar Manajemen",3],
+    "PRINCIPLES OF MANAGEMENT": ["Pengantar Manajemen",3],
+    "TEKNOLOGI INFORMASI": ["Teknologi Informasi",null],
+    "PENGANTAR AKUNTANSI 2": ["Pengantar Akuntansi 2",3],
+    "HUKUM BISNIS DAN REGULASI": ["Hukum Bisnis dan Regulasi",3],
+    "EKONOMI MAKRO": ["Ekonomi Makro",2],
+    "KEWIRAUSAHAAN": ["Kewirausahaan",3],
+    "PENGANTAR APLIKASI KOMPUTER": ["Pengantar Aplikasi Komputer",2],
+    "BAHASA INGGRIS 2": ["Bahasa Inggris 2",2],
+    "BAHASA INDONESIA": ["Bahasa Indonesia",2],
+    "KEWARGANEGARAAN": ["Kewarganegaraan",2],
+    "PERPAJAKAN 1": ["Perpajakan 1",3],
+    "AUDITING 1": ["Auditing 1",3],
+    "AKUNTANSI KEUANGAN 1": ["Akuntansi Keuangan 1",3],
+    "SISTEM INFORMASI AKUNTANSI": ["Sistem Informasi Akuntansi",3],
+    "AKUNTANSI BIAYA": ["Akuntansi Biaya",3],
+    "MANAJEMEN PEMASARAN": ["Manajemen Pemasaran",3],
+    "PEREKONOMIAN INDONESIA": ["Perekonomian Indonesia",2],
+    "PERPAJAKAN 2": ["Perpajakan 2",3],
+    "AUDITING 2": ["Auditing 2",3],
+    "AKUNTANSI KEUANGAN 2": ["Akuntansi Keuangan 2",3],
+    "AKUNTANSI MANAJEMEN": ["Akuntansi Manajemen",3],
+    "EKONOMI SYARIAH": ["Ekonomi Syariah",2],
+    "STATISTIK DESKRIPTIF": ["Statistik Deskriptif",3],
+    "PERILAKU ORGANISASI": ["Perilaku Organisasi",3],
+    "AKUNTANSI PERPAJAKAN": ["Akuntansi Perpajakan",3],
+    "AKUNTANSI KEUANGAN LANJUTAN 1": ["Akuntansi Keuangan Lanjutan 1",3],
+    "AKUNTANSI SEKTOR PUBLIK": ["Akuntansi Sektor Publik",3],
+    "TEORI AKUNTANSI": ["Teori Akuntansi",2],
+    "STATISTIK INFERENSIAL": ["Statistik Inferensial",3],
+    "SISTEM INFORMASI MANAJEMEN": ["Sistem Informasi Manajemen",3],
+    "KOMUNIKASI BISNIS": ["Komunikasi Bisnis",2],
+    "AKUNTANSI LINGKUNGAN": ["Akuntansi Lingkungan",3],
+    "INTERNAL AUDIT": ["Internal Audit",3],
+    "AKUNTANSI KEUANGAN LANJUTAN 2": ["Akuntansi Keuangan Lanjutan 2",3],
+    "AUDIT INVESTIGASI DAN FORENSIK": ["Audit Investigasi dan Forensik",3],
+    "METODOLOGI PENELITIAN": ["Metodologi Penelitian",3],
+    "SISTEM PENGENDALIAN MANAJEMEN": ["Sistem Pengendalian Manajemen",3],
+    "ETIKA BISNIS DAN PROFESI": ["Etika Bisnis dan Profesi",3],
+    "BANK DAN LEMBAGA KEUANGAN": ["Bank dan Lembaga Keuangan",3],
+    "MANAJEMEN KEUANGAN": ["Manajemen Keuangan",3],
+    "ANALISIS LAPORAN KEUANGAN": ["Analisis Laporan Keuangan",3],
+    "PAJAK DAN RETRIBUSI": ["Pajak dan Retribusi",3],
+    "PENGUKURAN KINERJA": ["Pengukuran Kinerja",3],
+    "KOMPUTER AKUNTANSI": ["Komputer Akuntansi",2],
+    "SUSTAINABILITY ACCOUNTING": ["Sustainability Accounting",3],
+    "MANAJEMEN STRATEGIK": ["Manajemen Strategik",3],
+    "MANAJEMEN INVESTASI": ["Manajemen Investasi",2],
+    "CORPORATE SOCIAL RESPONSIBILITY": ["Corporate Social Responsibility",3],
+    "MANAJEMEN RESIKO": ["Manajemen Resiko",3],
+    "MANAJEMEN RISIKO": ["Manajemen Resiko",3],
+    "SEMINAR AKUNTANSI KEUANGAN": ["Seminar Akuntansi Keuangan",3],
+    "CORPORATE GOVERNANCE": ["Corporate Governance",3],
+    "SKRIPSI": ["Skripsi",null]
 };
-
-function mkFullName(name){
-  const raw=clean(name);
-  if(!raw) return '';
-  if(MK_MASTER[raw]) return MK_MASTER[raw];
-
-  const upper=raw.toUpperCase();
-  const key=Object.keys(MK_MASTER).find(k=>k.toUpperCase()===upper);
-  return key ? MK_MASTER[key] : raw;
-}
 
 /* =========================================================
-   MASTER SKS MATA KULIAH
-   Berdasarkan daftar SKS yang diberikan pengguna.
-   Skripsi dibiarkan kosong karena jumlah SKS tidak diberikan.
+   VARIABEL APLIKASI
    ========================================================= */
-const SKS_MASTER={
-  "Pendidikan Agama":2,
-  "Pendidikan Pancasila":2,
-  "Bahasa Inggris 1":2,
-  "Matematika Ekonomi":3,
-  "Pengantar Ilmu Ekonomi Mikro":2,
-  "Pengantar Akuntansi 1":3,
-  "Pengantar Bisnis":2,
-  "Pengantar Manajemen":3,
-  "Pengantar Akuntansi 2":3,
-  "Hukum Bisnis dan Regulasi":3,
-  "Ekonomi Makro":2,
-  "Kewirausahaan":3,
-  "Pengantar Aplikasi Komputer":2,
-  "Bahasa Inggris 2":2,
-  "Bahasa Indonesia":2,
-  "Kewarganegaraan":2,
-  "Perpajakan 1":3,
-  "Auditing 1":3,
-  "Akuntansi Keuangan 1":3,
-  "Sistem Informasi Akuntansi":3,
-  "Akuntansi Biaya":3,
-  "Manajemen Pemasaran":3,
-  "Perekonomian Indonesia":2,
-  "Perpajakan 2":3,
-  "Auditing 2":3,
-  "Akuntansi Keuangan 2":3,
-  "Akuntansi Manajemen":3,
-  "Ekonomi Syariah":2,
-  "Statistik Deskriptif":3,
-  "Perilaku Organisasi":3,
-  "Akuntansi Perpajakan":3,
-  "Akuntansi Keuangan Lanjutan 1":3,
-  "Akuntansi Sektor Publik":3,
-  "Teori Akuntansi":2,
-  "Statistik Inferensial":3,
-  "Sistem Informasi Manajemen":3,
-  "Komunikasi Bisnis":2,
-  "Akuntansi Lingkungan":3,
-  "Internal Audit":3,
-  "Akuntansi Keuangan Lanjutan 2":3,
-  "Audit Investigasi dan Forensik":3,
-  "Metodologi Penelitian":3,
-  "Sistem Pengendalian Manajemen":3,
-  "Etika Bisnis dan Profesi":3,
-  "Bank dan Lembaga Keuangan":3,
-  "Manajemen Keuangan":3,
-  "Analisis Laporan Keuangan":3,
-  "Pajak dan Retribusi":3,
-  "Pengukuran Kinerja":3,
-  "Komputer Akuntansi":2,
-  "Sustainability Accounting":3,
-  "Analisis Laporan Keuangan":3,
-  "Manajemen Strategik":3,
-  "Manajemen Investasi":2,
-  "Corporate Social Responsibility":3,
-  "Manajemen Resiko":3,
-  "Seminar Akuntansi Keuangan":3,
-  "Corporate Governance":3,
-  "Skripsi":null,
-  "Teknologi Informasi":null
-};
+let allRows = [];
+let roomMap = {};
+let roomRows = [];
+let scheduleWorkbook = null;
 
-function normalizeCourseKey(v){
-  return clean(v).toLowerCase()
-    .replace(/\s+/g,' ')
-    .replace(/[‐‑–—]/g,'-')
-    .trim();
-}
-
-const SKS_MASTER_NORMALIZED=Object.fromEntries(
-  Object.entries(SKS_MASTER).map(([k,v])=>[normalizeCourseKey(k),v])
-);
-
-function getSks(courseName){
-  const full=mkFullName(courseName);
-  const key=normalizeCourseKey(full);
-  return Object.prototype.hasOwnProperty.call(SKS_MASTER_NORMALIZED,key)
-    ? SKS_MASTER_NORMALIZED[key]
-    : '';
-}
-
-function mkHtml(name){
-  const short=clean(name);
-  const full=mkFullName(short);
-
-  if(full && normalize(full)!==normalize(short)){
-    return `<div class="mk-full"><b>${escapeHtml(full)}</b></div>
-            <div class="mk-code">Nama di Excel: ${escapeHtml(short)}</div>`;
-  }
-
-  return `<div class="mk-full"><b>${escapeHtml(full || short)}</b></div>`;
+/* =========================================================
+   UTILITAS
+   ========================================================= */
+function norm(v){
+    return String(v ?? "")
+        .replace(/\u00a0/g," ")
+        .trim()
+        .replace(/\s+/g," ")
+        .toUpperCase();
 }
 
 function clean(v){
-  if(v===null || v===undefined) return '';
-  return String(v).replace(/\s+/g,' ').trim();
+    return String(v ?? "").replace(/\u00a0/g," ").trim();
 }
 
-function escapeHtml(v){
-  return clean(v)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#039;');
+function dayOrder(day){
+    const d = norm(day);
+    if(d.includes("SENIN")) return 1;
+    if(d.includes("SELASA")) return 2;
+    if(d.includes("RABU")) return 3;
+    if(d.includes("KAMIS")) return 4;
+    if(d.includes("JUMAT") || d.includes("JUM'AT")) return 5;
+    if(d.includes("SABTU")) return 6;
+    if(d.includes("MINGGU")) return 7;
+    return 99;
 }
 
-function normalize(v){
-  return clean(v).toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
+function timeValue(t){
+    const m = String(t ?? "").match(/(\d{1,2})[.:](\d{2})/);
+    if(!m) return 99999;
+    return Number(m[1])*60 + Number(m[2]);
 }
 
-function normalizeCode(v){
-  return clean(v).replace(/\s+/g,' ');
+function normalizeReg(v){
+    const x = norm(v);
+    if(x.includes("REG A") || x === "A") return "A";
+    if(x.includes("REG B") || x === "B") return "B";
+    if(x.includes("REG C") || x.includes("REG CS") || x === "C" || x === "CS") return "C";
+    return "";
 }
 
-function teacherFullName(code){
-  const key=normalize(code);
-  if(DOSEN_MASTER[key]) return DOSEN_MASTER[key];
-  if(DOSEN_ALIAS[key]) return DOSEN_ALIAS[key];
-  return clean(code);
+function fullLecturer(code, rawName=""){
+    const c = norm(code);
+    if(DOSEN[code]) return DOSEN[code];
+    for(const k of Object.keys(DOSEN)){
+        if(norm(k) === c) return DOSEN[k];
+    }
+    if(rawName) return rawName;
+    return code || "";
 }
 
-function teacherSearchText(code){
-  const short=normalize(code);
-  const full=normalize(teacherFullName(code));
-  return short+' '+full;
+function lecturerCode(raw){
+    const s = clean(raw);
+    const u = norm(s);
+
+    // Jika sudah kode pendek
+    for(const k of Object.keys(DOSEN)){
+        if(norm(k) === u) return k;
+    }
+
+    // Cocokkan nama lengkap ke master
+    for(const [code,name] of Object.entries(DOSEN)){
+        if(norm(name) === u) return code;
+        const first = norm(name.split(",")[0]);
+        if(first && u.includes(first)) return code;
+    }
+
+    // Jika Excel berisi "Nama [KODE]"
+    const bracket = s.match(/\[([A-Za-z0-9_-]+)\]/);
+    if(bracket) return bracket[1].toUpperCase();
+
+    return s;
 }
 
-function regFromSheet(sheet){
-  const s=sheet.toLowerCase().trim();
-  if(s==='reg a') return 'Reg A';
-  if(s==='reg b') return 'Reg B';
-  if(s==='reg cs' || s==='reg c') return 'Reg C';
-  return null;
-}
+function courseInfo(raw){
+    const u = norm(raw);
+    if(MK[u]) return MK[u];
 
-function isClassCode(v){
-  const s=normalizeCode(v).toUpperCase();
-  return /AKS[A-Z]/.test(s) && /\d/.test(s);
-}
-
-function headerIsRoom(data,col){
-  for(let r=0;r<Math.min(data.length,10);r++){
-    const v=clean(data[r]?.[col]);
-    if(/^ruangan?$|^ruang$/i.test(v)) return true;
-  }
-  return false;
-}
-
-function getClassColumns(data){
-  const cols=[];
-  const seen=new Set();
-
-  for(let r=0;r<Math.min(data.length,12);r++){
-    for(let c=0;c<(data[r]?.length||0);c++){
-      const value=data[r][c];
-      if(isClassCode(value)){
-        const code=normalizeCode(value);
-        const key=code.toUpperCase();
-
-        if(!seen.has(key)){
-          seen.add(key);
-          cols.push({
-            col:c,
-            code,
-            roomCol:headerIsRoom(data,c+1)?c+1:null
-          });
+    // exact/contains matching
+    for(const key of Object.keys(MK)){
+        if(u === key || u.includes(key) || key.includes(u)){
+            return MK[key];
         }
-      }
     }
-  }
-  return cols;
+    return [clean(raw), null];
 }
 
-function findDayMarkers(data){
-  const markers=[];
-  const dayWords=/^(senin|selasa|rabu|kamis|jum'?at|sabtu|minggu)$/i;
-
-  for(let r=0;r<data.length;r++){
-    for(let c=0;c<Math.min(3,data[r]?.length||0);c++){
-      const v=clean(data[r][c]);
-      if(dayWords.test(v)) markers.push({row:r,day:v});
-    }
-  }
-  return markers;
-}
-
-function findRegCMarkers(data){
-  const markers=[];
-  for(let r=0;r<data.length;r++){
-    const v=clean(data[r]?.[1]);
-    if(/^CS\s*\(/i.test(v)) markers.push({row:r,day:v});
-  }
-  return markers;
-}
-
-function getTimeMap(data){
-  const map={};
-  const timeRe=/\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}/;
-
-  for(const row of data){
-    for(let c=0;c<row.length;c++){
-      const v=clean(row[c]);
-      const m=v.match(timeRe);
-
-      if(m){
-        let jam='';
-        for(let k=Math.max(0,c-3);k<=c;k++){
-          const x=clean(row[k]);
-          if(/^\d+(\.0)?$/.test(x)) jam=String(parseInt(x,10));
-        }
-        if(jam) map[jam]=m[0].replace(/\s+/g,' ');
-      }
-    }
-  }
-  return map;
-}
-
-function getSlotRows(data){
-  const rows=[];
-
-  for(let r=0;r<data.length;r++){
-    const v=clean(data[r]?.[2]);
-
-    if(/^\d+(\.0)?$/.test(v)){
-      const n=parseInt(v,10);
-      if(n>=1 && n<=10) rows.push({row:r,slot:n});
-    }
-  }
-  return rows;
-}
-
-function assignDayForBlocks(data,slotRows,reg){
-  const result=[];
-  const markers=reg==='Reg C' ? findRegCMarkers(data) : findDayMarkers(data);
-
-  const starts=slotRows.filter(x=>x.slot===1).map(x=>x.row);
-
-  for(let i=0;i<starts.length;i++){
-    const start=starts[i];
-    const end=i+1<starts.length ? starts[i+1]-1 : data.length-1;
-
-    let day='';
-    const inside=markers.filter(m=>m.row>=start && m.row<=end);
-
-    if(inside.length) day=inside[0].day;
-
-    if(!day){
-      const before=markers
-        .filter(m=>m.row<start)
-        .sort((a,b)=>b.row-a.row)[0];
-
-      if(before) day=before.day;
-    }
-
-    for(const s of slotRows.filter(x=>x.row>=start && x.row<=end)){
-      result.push({...s,day});
-    }
-  }
-
-  return result;
-}
-
-function cleanClassCode(v){
-  const s=clean(v);
-  // Format sumber baru: 01AKSP001 (02452) -> 01AKSP001
-  return s.replace(/\s*\([^)]*\)\s*$/,'').trim();
-}
-
-function normalizeHeader(v){
-  return clean(v).toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
-}
-
-function findHeaderRow(data){
-  const wanted=['KELAS','NAMA MATA KULIAH','RUANG','HARI','WAKTU KULIAH','KODE DOSEN','NAMA DOSEN','SHIFT'];
-  for(let r=0;r<Math.min(data.length,15);r++){
-    const vals=(data[r]||[]).map(normalizeHeader);
-    const hits=wanted.filter(x=>vals.includes(x)).length;
-    if(hits>=4) return r;
-  }
-  return -1;
-}
-
-function headerIndex(headers,...names){
-  for(const name of names){
-    const i=headers.indexOf(normalizeHeader(name));
-    if(i>=0) return i;
-  }
-  return -1;
-}
-
-function parseRegValue(v){
-  const s=normalize(v);
-  if(/REGULER A|REG A|^A$/.test(s)) return 'Reg A';
-  if(/REGULER B|REG B|^B$/.test(s)) return 'Reg B';
-  if(/REGULER C|REG C|REG CS|^C$|^CS$/.test(s)) return 'Reg C';
-  return null;
-}
-
-function extractFlatSheet(sheet){
-  const ws=workbook.Sheets[sheet];
-  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-  const hr=findHeaderRow(data);
-  if(hr<0) return [];
-
-  const headers=(data[hr]||[]).map(normalizeHeader);
-  const iKelas=headerIndex(headers,'KELAS');
-  const iMk=headerIndex(headers,'NAMA MATA KULIAH');
-  const iRoom=headerIndex(headers,'RUANG');
-  const iShift=headerIndex(headers,'SHIFT');
-  const iKodeDosen=headerIndex(headers,'KODE DOSEN');
-  const iNamaDosen=headerIndex(headers,'NAMA DOSEN');
-  const iHari=headerIndex(headers,'HARI');
-  const iWaktu=headerIndex(headers,'WAKTU KULIAH','WAKTU');
-  const iSks=headerIndex(headers,'SKS');
-
-  if(iKelas<0 || iMk<0) return [];
-
-  const records=[];
-  for(let r=hr+1;r<data.length;r++){
-    const row=data[r]||[];
-    const rawClass=clean(row[iKelas]);
-    const code=cleanClassCode(rawClass);
-    const subject=clean(row[iMk]);
-    if(!code || !subject) continue;
-
-    const reg=parseRegValue(iShift>=0?row[iShift]:'');
-    if(!reg) continue;
-
-    const rawSks=iSks>=0?clean(row[iSks]):'';
-    const sks=getSks(subject) || rawSks;
-    const room=iRoom>=0?clean(row[iRoom]):'';
-    const teacher=iKodeDosen>=0?clean(row[iKodeDosen]):'';
-    const teacherName=iNamaDosen>=0?clean(row[iNamaDosen]):'';
-    const day=iHari>=0?clean(row[iHari]):'';
-    const waktu=iWaktu>=0?clean(row[iWaktu]):'';
-
-    records.push({
-      reg,
-      sheet,
-      kodeKelas:code,
-      kodeKelasSumber:rawClass,
-      no:records.filter(x=>x.reg===reg && x.kodeKelas===code).length+1,
-      mataKuliah:subject,
-      sks,
-      ruang:room,
-      hari:day,
-      jamKe:clean(row[headers.indexOf('PERIODE MULAI KULIAH')]) || '',
-      waktu,
-      dosen:teacher || teacherName,
-      dosenNamaSumber:teacherName
-    });
-  }
-  return records;
-}
-
-function isFlatScheduleSheet(sheet){
-  const ws=workbook.Sheets[sheet];
-  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-  return findHeaderRow(data)>=0;
-}
-
-function extractSheet(sheet,reg){
-  const ws=workbook.Sheets[sheet];
-  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-  const classCols=getClassColumns(data);
-
-  if(!classCols.length) return [];
-
-  const slotRows=getSlotRows(data);
-  const blocks=assignDayForBlocks(data,slotRows,reg);
-  const timeMap=getTimeMap(data);
-  const records=[];
-
-  for(const cls of classCols){
-    for(const block of blocks){
-      const r=block.row;
-
-      const teacher=clean(data[r]?.[cls.col]);
-      const subject=clean(data[r+1]?.[cls.col]);
-      const room=cls.roomCol!==null ? clean(data[r]?.[cls.roomCol]) : '';
-
-      if(!teacher && !subject && !room) continue;
-
-      if(!subject ||
-         /^\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}$/.test(subject)) continue;
-
-      records.push({
-        reg,
-        sheet,
-        kodeKelas:cls.code,
-        no:records.filter(x=>x.reg===reg && x.kodeKelas===cls.code).length+1,
-        mataKuliah:subject,
-        sks:getSks(subject),
-        ruang:room || roomFromMaster(reg,cls.code),
-        hari:block.day,
-        jamKe:block.slot,
-        waktu:timeMap[String(block.slot)] || '',
-        dosen:teacher
-      });
-    }
-  }
-
-  return records;
-}
-
-function baseClassCode(v){
-  return clean(v).replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();
-}
-
-function putRoom(reg,code,room){
-  const r=clean(room);
-  const c=clean(code);
-  if(!reg || !c || !r) return;
-  const key=reg+'|'+baseClassCode(c);
-  if(!ROOM_MASTER[key]) ROOM_MASTER[key]=[];
-  if(!ROOM_MASTER[key].includes(r)) ROOM_MASTER[key].push(r);
-}
-
-/*
-   Baca master ruang dari SEMUA bentuk Excel yang mungkin:
-   1) Format jadwal utama: kode kelas di satu kolom, RUANGAN di kolom sebelahnya.
-   2) Format tabel: kolom KODE KELAS + RUANG/RUANGAN.
-   3) Format rekap: judul kelas + header SEMESTER/NO/MATA KULIAH/SKS/RUANG/... .
-   Jadi kalau user menaruh data ruang di sheet lain, tetap bisa terbaca.
-*/
-function buildRoomMaster(){
-  ROOM_MASTER={};
-
-  for(const sheet of workbook.SheetNames){
-    const ws=workbook.Sheets[sheet];
-    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-
-    /* Tabel datar: cari header KODE KELAS + RUANG */
-    for(let hr=0;hr<Math.min(data.length,30);hr++){
-      const headers=(data[hr]||[]).map(normalizeHeader);
-      const iKelas=headers.findIndex(x=>['KODE KELAS','KELAS'].includes(x));
-      const iRoom=headers.findIndex(x=>['RUANG','RUANGAN'].includes(x));
-      const iReg=headers.findIndex(x=>['REGULER','REG','SHIFT'].includes(x));
-      if(iKelas<0 || iRoom<0) continue;
-
-      for(let r=hr+1;r<data.length;r++){
-        const row=data[r]||[];
-        const code=cleanClassCode(row[iKelas]);
-        const room=clean(row[iRoom]);
-        if(!isClassCode(code)) continue;
-
-        let reg=parseRegValue(iReg>=0?row[iReg]:'') || regFromSheet(sheet);
-        if(!reg){
-          const n=code.toUpperCase();
-          if(n.includes('AKSP')) reg='Reg A';
-          else if(n.includes('AKSM')) reg='Reg B';
-          else if(n.includes('AKSE')) reg='Reg C';
-        }
-        putRoom(reg,code,room);
-      }
-    }
-
-    /* Format utama: kode kelas di header, RUANGAN/RUANG di sebelahnya. */
-    const classCols=getClassColumns(data);
-    const sheetReg=regFromSheet(sheet);
-    if(sheetReg && classCols.length){
-      for(const cls of classCols){
-        if(cls.roomCol===null) continue;
-        for(let r=0;r<data.length;r++){
-          const room=clean(data[r]?.[cls.roomCol]);
-          if(room && !/^(ruangan|ruang)$/i.test(room)) putRoom(sheetReg,cls.code,room);
-        }
-      }
-    }
-
-    /* Rekap blok: judul "REGULER A 01AKSP001", lalu header yang punya RUANG. */
-    let activeReg=sheetReg;
-    let activeClass='';
-    for(let r=0;r<data.length;r++){
-      const row=data[r]||[];
-      const joined=row.map(clean).join(' ');
-      const m=joined.match(/REGULER\s+([ABC])\s+([^,\s]+)/i);
-      if(m){
-        activeReg='Reg '+m[1].toUpperCase();
-        activeClass=cleanClassCode(m[2]);
-        continue;
-      }
-      if(!activeClass || !activeReg) continue;
-
-      const headers=row.map(normalizeHeader);
-      const iRoom=headers.findIndex(x=>['RUANG','RUANGAN'].includes(x));
-      if(iRoom<0) continue;
-
-      for(let rr=r+1;rr<Math.min(r+30,data.length);rr++){
-        const rrw=data[rr]||[];
-        const room=clean(rrw[iRoom]);
-        if(room) putRoom(activeReg,activeClass,room);
-        if(rr>r+1 && rrw.some(v=>/^REGULER\s+[ABC]\s+/i.test(clean(v)))) break;
-      }
-    }
-  }
-}
-
-function roomFromMaster(reg,code){
-  const arr=ROOM_MASTER[reg+'|'+baseClassCode(code)]||[];
-  return arr.join(' / ');
-}
-
-function loadAllData(){
-  allRecords=[];
-  ROOM_MASTER={};
-  buildRoomMaster();
-
-  for(const sheet of workbook.SheetNames){
-    const reg=regFromSheet(sheet);
-    if(reg){
-      allRecords.push(...extractSheet(sheet,reg));
-      continue;
-    }
-
-    if(isFlatScheduleSheet(sheet)){
-      allRecords.push(...extractFlatSheet(sheet));
-    }
-  }
-
-  /* Isi ruang dari master ruang bila parser utama menemukan kolom kosong. */
-  allRecords=allRecords.map(r=>({
-    ...r,
-    ruang:clean(r.ruang) || roomFromMaster(r.reg,r.kodeKelas)
-  }));
-
-  const seen=new Set();
-  allRecords=allRecords.filter(x=>{
-    const key=[
-      x.reg,x.kodeKelas,x.hari,x.jamKe,
-      x.mataKuliah,x.dosen,x.ruang
-    ].join('|').toUpperCase();
-
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-
-  populateReg();
-}
-function populateReg(){
-  regSelect.innerHTML='';
-  const regs=['ALL','Reg A','Reg B','Reg C'];
-
-  const labels={
-    ALL:'Semua Reg (A + B + C)',
-    'Reg A':'Reg A',
-    'Reg B':'Reg B',
-    'Reg C':'Reg C / CS'
-  };
-
-  regs.forEach(v=>{
-    const o=document.createElement('option');
-    o.value=v;
-    o.textContent=labels[v];
-    regSelect.appendChild(o);
-  });
-
-  regSelect.disabled=false;
-  modeSelect.disabled=false;
-  nameMode.disabled=false;
-
-  regSelect.value='ALL';
-  modeSelect.value='all';
-
-  populateClasses();
-  populateDosen();
-  updateControls();
-}
-
-function filteredByReg(){
-  const reg=regSelect.value;
-  return reg==='ALL'
-    ? allRecords
-    : allRecords.filter(x=>x.reg===reg);
-}
-
-function getClassRoom(code,reg){
-  const rooms=[...new Set(
-    allRecords.filter(x=>x.reg===reg && x.kodeKelas===code && clean(x.ruang))
-      .map(x=>clean(x.ruang))
-  )];
-  return rooms.join(' / ');
-}
-
-function classLabel(code,reg){
-  const room=getClassRoom(code,reg);
-  return room ? `${code} — Ruang ${room}` : code;
-}
-
-function populateClasses(){
-  classSelect.innerHTML='';
-
-  const reg=regSelect.value;
-  let records=allRecords;
-  if(reg!=='ALL') records=records.filter(x=>x.reg===reg);
-
-  const classes=[...new Set(records.map(x=>x.kodeKelas))].sort(
-    (a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'})
-  );
-
-  if(!classes.length){
-    classSelect.innerHTML='<option value="">Tidak ada kelas</option>';
-    classSelect.disabled=true;
-    return;
-  }
-
-  classSelect.innerHTML='<option value="">Pilih kode kelas</option>';
-  classes.forEach(code=>{
-    const regs=[...new Set(records.filter(x=>x.kodeKelas===code).map(x=>x.reg))];
-    const room=[...new Set(records.filter(x=>x.kodeKelas===code && clean(x.ruang)).map(x=>clean(x.ruang)))].join(' / ');
-    const o=document.createElement('option');
-    o.value=code;
-    o.textContent=room ? `${code} — ${regs.join('/')} — Ruang ${room}` : `${code} — ${regs.join('/')}`;
-    classSelect.appendChild(o);
-  });
-
-  classSelect.disabled=(modeSelect.value!=='single');
-}
-
-function populateDosen(){
-  const records=filteredByReg();
-
-  const codes=[...new Set(records.map(x=>clean(x.dosen)).filter(Boolean))];
-
-  codes.sort((a,b)=>
-    teacherFullName(a).localeCompare(
-      teacherFullName(b),
-      'id',
-      {sensitivity:'base'}
-    )
-  );
-
-  dosenSelect.innerHTML='';
-
-  const first=document.createElement('option');
-  first.value='';
-  first.textContent='Pilih dosen';
-  dosenSelect.appendChild(first);
-
-  codes.forEach(code=>{
-    const o=document.createElement('option');
-    o.value=code;
-
-    const full=teacherFullName(code);
-
-    if(full!==code){
-      o.textContent=`${full} [${code}]`;
-    }else{
-      o.textContent=code;
-    }
-
-    dosenSelect.appendChild(o);
-  });
-
-  dosenSelect.disabled=false;
-}
-
-function updateControls(){
-  const mode=modeSelect.value;
-
-  classSelect.disabled=(mode==='dosen' || mode==='conflict');
-  dosenSelect.disabled=(mode!=='dosen');
-
-  if(mode==='dosen'){
-    classStatus.innerHTML=
-      '<div class="info">Pilih nama dosen untuk melihat semua kelas yang diampu.</div>';
-  }else if(mode==='conflict'){
-    classStatus.innerHTML=
-      '<div class="info">Sistem akan mengecek dosen yang mengajar lebih dari satu kelas pada hari dan waktu yang bertabrakan.</div>';
-  }else{
-    const records=filteredByReg();
-    const count=[...new Set(records.map(x=>x.kodeKelas))].length;
-    classStatus.innerHTML=
-      `<div class="info"><b>${count}</b> kode kelas tersedia.</div>`;
-  }
-}
-
-const DAY_ORDER={
-  "senin":1,
-  "selasa":2,
-  "rabu":3,
-  "kamis":4,
-  "jumat":5,
-  "jum'at":5,
-  "sabtu":6,
-  "minggu":7
-};
-
-function dayOrder(value){
-  const key=clean(value).toLowerCase().replace(/\s+/g,'');
-  return DAY_ORDER[key] || 99;
-}
-
-function timeToMinutes(value){
-  const m=clean(value).match(/(\d{1,2})[.:](\d{2})/);
-  if(!m) return 99999;
-  return Number(m[1])*60+Number(m[2]);
-}
-
-function sortRecords(records){
-  const regOrder={'Reg A':1,'Reg B':2,'Reg C':3};
-
-  return [...records].sort((a,b)=>{
-    // Jika beberapa reguler ditampilkan sekaligus, kelompokkan reguler dulu.
-    const regCmp=(regOrder[a.reg]||9)-(regOrder[b.reg]||9);
-    if(regCmp!==0) return regCmp;
-
-    // Dalam setiap reguler, kelompokkan berdasarkan KODE KELAS.
-    const classCmp=String(a.kodeKelas||'').localeCompare(
-      String(b.kodeKelas||''),
-      undefined,
-      {numeric:true,sensitivity:'base'}
-    );
-    if(classCmp!==0) return classCmp;
-
-    // WAJIB: Senin -> Selasa -> Rabu -> Kamis -> Jumat -> Sabtu -> Minggu.
-    const dayCmp=dayOrder(a.hari)-dayOrder(b.hari);
-    if(dayCmp!==0) return dayCmp;
-
-    // Kalau harinya sama: waktu paling pagi -> paling siang.
-    const timeCmp=timeToMinutes(a.waktu)-timeToMinutes(b.waktu);
-    if(timeCmp!==0) return timeCmp;
-
-    // Jika waktu kosong/sama, gunakan JAM KE sebagai tie-breaker.
-    return (Number(a.jamKe)||999)-(Number(b.jamKe)||999);
-  });
-}
-
-function sortClassRows(records){
-  return [...records].sort((a,b)=>{
-    const dayCmp=dayOrder(a.hari)-dayOrder(b.hari);
-    if(dayCmp!==0) return dayCmp;
-
-    const timeCmp=timeToMinutes(a.waktu)-timeToMinutes(b.waktu);
-    if(timeCmp!==0) return timeCmp;
-
-    return (Number(a.jamKe)||999)-(Number(b.jamKe)||999);
-  });
-}
-
-function teacherDisplay(code){
-  return nameMode.value==='full'
-    ? teacherFullName(code)
-    : clean(code);
-}
-
-function teacherHtml(code){
-  const short=clean(code);
-  const full=teacherFullName(short);
-  const shown=teacherDisplay(short);
-
-  if(nameMode.value==='full' && full!==short){
-    return `<div class="teacher-name">${escapeHtml(shown)}</div>
-            <div class="teacher-code">Kode: ${escapeHtml(short)}</div>`;
-  }
-
-  return `<div class="teacher-name">${escapeHtml(shown)}</div>`;
-}
-
-function displayNormal(records){
-  const sorted=sortRecords(records);
-  displayedRecords=sorted;
-
-  if(!displayedRecords.length){
-    result.innerHTML=
-      '<div class="card empty">Tidak ada data jadwal untuk pilihan tersebut.</div>';
-    downloadButton.disabled=true;
-    return;
-  }
-
-  const groups=new Map();
-  displayedRecords.forEach(r=>{
-    const key=r.reg+'|'+r.kodeKelas;
-    if(!groups.has(key)) groups.set(key,[]);
-    groups.get(key).push(r);
-  });
-
-  let html='';
-
-  groups.forEach((rawRows,key)=>{
-    const rows=sortClassRows(rawRows);
-    const [reg,code]=key.split('|');
-    const first=rows[0]||{};
-    const semesterMatch=String(code||'').match(/^(\d{2})/);
-    const semester=semesterMatch ? parseInt(semesterMatch[1],10) : '';
-
-    html+=`
-    <div class="table-card">
-      <div class="toolbar">
-        <div>
-          <h2>${escapeHtml(reg.toUpperCase()+' '+code)}</h2>
-          <div class="small">
-            ${semester ? 'Semester '+semester+' • ' : ''}
-            <b>Kelas: ${escapeHtml(code)}</b> •
-            <b>Ruang: ${escapeHtml([...new Set(rows.map(x=>clean(x.ruang)).filter(Boolean))].join(' / ') || 'Belum diisi')}</b> •
-            ${rows.length} mata kuliah •
-            Tampilan dosen: <b>${nameMode.value==='full'?'Nama lengkap':'sesuai Excel'}</b>
-          </div>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>NO</th>
-            <th>MATA KULIAH LENGKAP</th>
-            <th>SKS</th>
-            <th>RUANG</th>
-            <th>HARI / KETERANGAN</th>
-            <th>JAM KE</th>
-            <th>WAKTU</th>
-            <th>DOSEN PENGAMPU</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-    rows.forEach((row,i)=>{
-      html+=`
-          <tr>
-            <td class="center">${i+1}</td>
-            <td>${mkHtml(row.mataKuliah)}</td>
-            <td class="center">${escapeHtml(row.sks)}</td>
-            <td>${escapeHtml(row.ruang)}</td>
-            <td>${escapeHtml(row.hari)}</td>
-            <td class="center">${escapeHtml(row.jamKe)}</td>
-            <td>${escapeHtml(row.waktu)}</td>
-            <td>${teacherHtml(row.dosen)}</td>
-          </tr>`;
-    });
-
-    html+=`</tbody></table></div></div>`;
-  });
-
-  result.innerHTML=html;
-  downloadButton.disabled=false;
-}
-
-function displayDosen(){
-  const selected=dosenSelect.value;
-
-  if(!selected){
-    result.innerHTML=
-      '<div class="card empty">Pilih nama dosen terlebih dahulu.</div>';
-    downloadButton.disabled=true;
-    displayedRecords=[];
-    return;
-  }
-
-  const target=normalize(selected);
-
-  const records=sortRecords(
-    filteredByReg().filter(x=>normalize(x.dosen)===target)
-  );
-
-  displayedRecords=records;
-
-  if(!records.length){
-    result.innerHTML=
-      '<div class="card empty">Jadwal dosen tidak ditemukan.</div>';
-    downloadButton.disabled=true;
-    return;
-  }
-
-  const full=teacherFullName(selected);
-
-  /* =====================================================
-     REKAP DOSEN PER REGULER
-     Contoh:
-     Reg A : 3 kelas
-     Reg B : 6 kelas
-     Reg C : 2 kelas
-     Total : 11 kelas
-     ===================================================== */
-  const recap={
-    'Reg A':new Set(),
-    'Reg B':new Set(),
-    'Reg C':new Set()
-  };
-
-  const recapRows={
-    'Reg A':[],
-    'Reg B':[],
-    'Reg C':[]
-  };
-
-  records.forEach(r=>{
-    if(!recap[r.reg]) return;
-    recap[r.reg].add(r.kodeKelas);
-    recapRows[r.reg].push(r);
-  });
-
-  const totalClasses=
-    recap['Reg A'].size+
-    recap['Reg B'].size+
-    recap['Reg C'].size;
-
-  /* Kumpulan data berdasarkan reguler + kode kelas */
-  const classMap={};
-
-  records.forEach(r=>{
-    const key=r.reg+'|'+r.kodeKelas;
-    if(!classMap[key]) classMap[key]=[];
-    classMap[key].push(r);
-  });
-
-  /* Hitung mata kuliah per kelas, lalu jumlahkan ke reguler.
-     Jadi bila dosen mengajar 6 kelas dan masing-masing 8 MK,
-     total riilnya = 48 mata kuliah/penugasan. */
-  const recapCourseTotals={'Reg A':0,'Reg B':0,'Reg C':0};
-  Object.keys(classMap).forEach(key=>{
-    const [reg]=key.split('|');
-    if(!recapCourseTotals.hasOwnProperty(reg)) return;
-    const uniqueCourses=new Set(
-      classMap[key]
-        .map(r=>normalizeCourseKey(r.mataKuliah || ''))
-        .filter(Boolean)
-    );
-    recapCourseTotals[reg]+=uniqueCourses.size;
-  });
-
-  const totalCourses=
-    recapCourseTotals['Reg A']+
-    recapCourseTotals['Reg B']+
-    recapCourseTotals['Reg C'];
-
-  /* Urutan reguler lalu kode kelas */
-  const classKeys=Object.keys(classMap).sort((a,b)=>{
-    const [regA,codeA]=a.split('|');
-    const [regB,codeB]=b.split('|');
-    const regOrder={'Reg A':1,'Reg B':2,'Reg C':3};
-    const regCmp=(regOrder[regA]||9)-(regOrder[regB]||9);
-    if(regCmp!==0) return regCmp;
-    return codeA.localeCompare(codeB,undefined,{numeric:true,sensitivity:'base'});
-  });
-
-  let html=`
-  <div class="card">
-    <div class="toolbar">
-      <div>
-        <h2>${escapeHtml(full)}</h2>
-        <div class="small">
-          Kode Excel: <b>${escapeHtml(selected)}</b>
-          • ${records.length} jadwal
-          • <b>${totalClasses} kelas total</b>
-          • <b>${totalCourses} mata kuliah total</b>
-        </div>
-      </div>
-    </div>
-
-    <div class="teacher-summary">
-      <div class="summary-grid">
-        <div class="summary-card summary-total">
-          <div class="summary-label">TOTAL KELAS</div>
-          <div class="summary-number">${totalClasses}</div>
-          <div class="summary-note">Seluruh reguler</div>
-        </div>
-
-        <div class="summary-card summary-total" style="background:#1e293b">
-          <div class="summary-label">TOTAL MATA KULIAH</div>
-          <div class="summary-number">${totalCourses}</div>
-          <div class="summary-note">Mata kuliah unik</div>
-        </div>
-
-        <div class="summary-card">
-          <div class="summary-label">REG A</div>
-          <div class="summary-number">${recap['Reg A'].size}</div>
-          <div class="summary-note">kelas</div>
-        </div>
-
-        <div class="summary-card">
-          <div class="summary-label">REG B</div>
-          <div class="summary-number">${recap['Reg B'].size}</div>
-          <div class="summary-note">kelas</div>
-        </div>
-
-        <div class="summary-card">
-          <div class="summary-label">REG C / CS</div>
-          <div class="summary-number">${recap['Reg C'].size}</div>
-          <div class="summary-note">kelas</div>
-        </div>
-      </div>
-
-      <div class="recap-detail">
-        <h3>Rekap Kelas yang Diampu</h3>
-        <div class="recap-list">
-          ${['Reg A','Reg B','Reg C'].map(reg=>{
-            const codes=[...recap[reg]].sort((a,b)=>
-              a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'})
-            );
-            const label=reg==='Reg C'?'Reg C / CS':reg;
-            const scheduleCount=recapRows[reg].length;
-            const courseCount=recapCourseTotals[reg] || 0;
-
-            return `
-              <div class="recap-row">
-                <div class="recap-reg">
-                  <b>${label}</b>
-                  <span><b>${codes.length} kelas</b> • <b>${courseCount} mata kuliah</b></span>
-                  <span>${scheduleCount} jadwal</span>
-                </div>
-                <div class="recap-codes">
-                  ${codes.length
-                    ? codes.map(code=>`<span class="class-pill">${escapeHtml(code)}</span>`).join('')
-                    : '<span class="muted">Tidak ada kelas</span>'}
-                </div>
-              </div>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>
-  </div>`;
-
-  classKeys.forEach(key=>{
-    const rows=sortClassRows(classMap[key]);
-    const [reg,code]=key.split('|');
-    const classCourses=new Set(
-      rows.map(r=>normalizeCourseKey(r.mataKuliah || '')).filter(Boolean)
-    );
-
-    html+=`
-      <div class="teacher-card">
-        <h3>${escapeHtml(reg)} — ${escapeHtml(code)}</h3>
-        <div class="teacher-meta">
-          <b>Ruang: ${escapeHtml([...new Set(rows.map(x=>clean(x.ruang)).filter(Boolean))].join(' / ') || 'Belum diisi')}</b> •
-          <b>${classCourses.size} mata kuliah</b> • ${rows.length} jadwal
-        </div>
-
-        <div class="table-wrap">
-        <table class="teacher-table">
-          <thead>
-            <tr>
-              <th>NO</th>
-              <th>MATA KULIAH LENGKAP</th>
-              <th>SKS</th>
-              <th>HARI</th>
-              <th>JAM KE</th>
-              <th>WAKTU</th>
-              <th>RUANG</th>
-            </tr>
-          </thead>
-          <tbody>`;
-
-    rows.forEach((r,i)=>{
-      html+=`
-          <tr>
-            <td class="center">${i+1}</td>
-            <td>${mkHtml(r.mataKuliah)}</td>
-            <td class="center">${escapeHtml(r.sks)}</td>
-            <td>${escapeHtml(r.hari)}</td>
-            <td class="center">${escapeHtml(r.jamKe)}</td>
-            <td>${escapeHtml(r.waktu)}</td>
-            <td>${escapeHtml(r.ruang)}</td>
-          </tr>`;
-    });
-
-    html+=`</tbody></table></div></div>`;
-  });
-
-  result.innerHTML=html;
-  downloadButton.disabled=false;
-}
-
-function timeRange(value){
-  const m=clean(value).match(/(\d{1,2})[.:](\d{2})\s*[-–]\s*(\d{1,2})[.:](\d{2})/);
-  if(!m) return null;
-
-  return {
-    start:Number(m[1])*60+Number(m[2]),
-    end:Number(m[3])*60+Number(m[4])
-  };
-}
-
-function canonicalTeacher(code){
-  const raw=clean(code);
-  if(!raw) return '';
-
-  const full=teacherFullName(raw);
-  return normalize(full || raw);
-}
-
-function detectDosenConflicts(records){
-  const sorted=sortRecords(records);
-  const byTeacher={};
-
-  sorted.forEach(r=>{
-    const teacherKey=canonicalTeacher(r.dosen);
-    if(!teacherKey) return;
-
-    if(!byTeacher[teacherKey]) byTeacher[teacherKey]=[];
-    byTeacher[teacherKey].push(r);
-  });
-
-  const conflicts=[];
-
-  Object.keys(byTeacher).forEach(teacherKey=>{
-    const rows=byTeacher[teacherKey];
-
-    for(let i=0;i<rows.length;i++){
-      for(let j=i+1;j<rows.length;j++){
-        const a=rows[i];
-        const b=rows[j];
-
-        if(dayOrder(a.hari)!==dayOrder(b.hari)) continue;
-
-        // Jangan anggap dua baris dari kelas yang sama sebagai bentrok.
-        // Yang dicari adalah satu dosen masuk di dua kelas berbeda.
-        if(a.reg===b.reg && a.kodeKelas===b.kodeKelas) continue;
-
-        const ta=timeRange(a.waktu);
-        const tb=timeRange(b.waktu);
-
-        let overlap=false;
-
-        if(ta && tb){
-          overlap=ta.start < tb.end && tb.start < ta.end;
-        }else{
-          // Jika waktu tidak tersedia, fallback ke JAM KE.
-          overlap=String(a.jamKe)===String(b.jamKe);
-        }
-
-        if(!overlap) continue;
-
-        conflicts.push({
-          teacherKey,
-          teacher:teacherFullName(a.dosen || b.dosen),
-          hari:a.hari || b.hari,
-          waktu:a.waktu || b.waktu || '-',
-          rows:[a,b]
-        });
-      }
-    }
-  });
-
-  return conflicts.sort((a,b)=>{
-    const teacherCmp=a.teacher.localeCompare(b.teacher,'id',{sensitivity:'base'});
-    if(teacherCmp!==0) return teacherCmp;
-    const dayCmp=dayOrder(a.hari)-dayOrder(b.hari);
-    if(dayCmp!==0) return dayCmp;
-    return timeToMinutes(a.waktu)-timeToMinutes(b.waktu);
-  });
-}
-
-function displayConflicts(){
-  const records=filteredByReg();
-  const conflicts=detectDosenConflicts(records);
-  displayedRecords=records;
-
-  if(!conflicts.length){
-    result.innerHTML=`
-      <div class="card">
-        <h2>Tidak Ada Bentrok Dosen</h2>
-        <div class="success">
-          Tidak ditemukan dosen yang mengajar dua kelas berbeda pada hari dan waktu yang sama.
-        </div>
-      </div>`;
-    downloadButton.disabled=false;
-    return;
-  }
-
-  const uniqueTeachers=new Set(conflicts.map(x=>x.teacherKey));
-
-  let html=`
-  <div class="card">
-    <div class="toolbar">
-      <div>
-        <h2>Pelacakan Bentrok Dosen</h2>
-        <div class="small">
-          Ditemukan <b>${conflicts.length}</b> bentrok pada
-          <b>${uniqueTeachers.size}</b> dosen.
-          Sistem membandingkan hari + jam dan mendeteksi waktu yang saling overlap.
-        </div>
-      </div>
-      <span class="badge conflict-badge">PERLU DICEK</span>
-    </div>
-  </div>`;
-
-  conflicts.forEach((conflict,index)=>{
-    const a=conflict.rows[0];
-    const b=conflict.rows[1];
-
-    html+=`
-    <div class="conflict-card">
-      <div class="conflict-title">
-        <div>
-          <h3>${escapeHtml(conflict.teacher)}</h3>
-          <div class="conflict-meta">
-            Bentrok #${index+1} • ${escapeHtml(conflict.hari)} • ${escapeHtml(conflict.waktu || '-')} 
-          </div>
-        </div>
-        <span class="badge conflict-badge">BENTROK</span>
-      </div>
-
-      <div class="table-wrap">
-        <table class="conflict-table">
-          <thead>
-            <tr>
-              <th>REG</th>
-              <th>KODE KELAS</th>
-              <th>MATA KULIAH LENGKAP</th>
-              <th>HARI</th>
-              <th>JAM KE</th>
-              <th>WAKTU</th>
-              <th>RUANG</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="center">${escapeHtml(a.reg)}</td>
-              <td><b>${escapeHtml(a.kodeKelas)}</b></td>
-              <td>${escapeHtml(a.mataKuliah)}</td>
-              <td>${escapeHtml(a.hari)}</td>
-              <td class="center">${escapeHtml(a.jamKe)}</td>
-              <td>${escapeHtml(a.waktu || '-')}</td>
-              <td>${escapeHtml(a.ruang || '-')}</td>
-            </tr>
-            <tr>
-              <td class="center">${escapeHtml(b.reg)}</td>
-              <td><b>${escapeHtml(b.kodeKelas)}</b></td>
-              <td>${escapeHtml(b.mataKuliah)}</td>
-              <td>${escapeHtml(b.hari)}</td>
-              <td class="center">${escapeHtml(b.jamKe)}</td>
-              <td>${escapeHtml(b.waktu || '-')}</td>
-              <td>${escapeHtml(b.ruang || '-')}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-  });
-
-  result.innerHTML=html;
-  downloadButton.disabled=true;
-}
-
-function showData(){
-  if(modeSelect.value==='dosen'){
-    displayDosen();
-    return;
-  }
-
-  if(modeSelect.value==='conflict'){
-    displayConflicts();
-    return;
-  }
-
-  let records=filteredByReg();
-
-  if(modeSelect.value==='single' && classSelect.value!=='ALL'){
-    records=records.filter(x=>x.kodeKelas===classSelect.value);
-  }
-
-  displayNormal(records);
-}
-
-/* =========================================================
-   DOWNLOAD EXCEL
-   - Reg A = 1 sheet
-   - Reg B = 1 sheet
-   - Reg C/CS = 1 sheet
-   - Setiap kelas menjadi tabel TERPISAH dalam sheet.
-   - Judul kelas bold.
-   - Header tabel bold + background.
-   - Freeze panes.
-   - Auto filter/table Excel.
-   - Nama dosen mengikuti pilihan Nama Lengkap / Sesuai Excel.
-   ========================================================= */
-async function downloadExcel(){
-  if(!displayedRecords.length) return;
-
-  downloadButton.disabled=true;
-  downloadButton.textContent='Membuat Excel...';
-
-  try{
-    const out=new ExcelJS.Workbook();
-
-    out.creator='Pengolah Jadwal Prodi Akuntansi';
-    out.title='Jadwal Prodi Akuntansi';
-    out.subject='Jadwal Perkuliahan';
-    out.created=new Date();
-
-    const groups={
-      'Reg A':[],
-      'Reg B':[],
-      'Reg C':[]
+function parseTimeParts(v){
+    const s = clean(v);
+    const m = s.match(/(\d{1,2}[.:]\d{2})\s*[-–]\s*(\d{1,2}[.:]\d{2})/);
+    if(!m) return {start:s,end:"",sort:timeValue(s)};
+    return {
+        start:m[1].replace(".",":"),
+        end:m[2].replace(".",":"),
+        sort:timeValue(m[1])
     };
+}
 
-    displayedRecords.forEach(r=>{
-      if(groups[r.reg]) groups[r.reg].push(r);
-    });
-
-    const widths=[8,32,8,16,22,9,20,30];
-    const headers=[
-      'NO',
-      'MATA KULIAH',
-      'SKS',
-      'RUANG',
-      'HARI / KETERANGAN',
-      'JAM KE',
-      'WAKTU',
-      'DOSEN PENGAMPU'
-    ];
-
-    for(const reg of ['Reg A','Reg B','Reg C']){
-      const list=groups[reg];
-      if(!list.length) continue;
-
-      const sheetName=
-        reg==='Reg C' ? 'Reg C-CS' : reg;
-
-      const ws=out.addWorksheet(sheetName);
-
-      ws.views=[{showGridLines:false}];
-      ws.freezePanes={ySplit:3};
-
-      ws.pageSetup={
-        orientation:'landscape',
-        fitToPage:true,
-        fitToWidth:1,
-        fitToHeight:0,
-        paperSize:ws.PAPERSIZE_A4
-      };
-
-      ws.pageSetup.margins={
-        left:0.25,right:0.25,top:0.5,bottom:0.5,
-        header:0.2,footer:0.2
-      };
-
-      widths.forEach((w,i)=>{
-        ws.getColumn(i+1).width=w;
-      });
-
-      const classes=[...new Set(list.map(x=>x.kodeKelas))].sort(
-        (a,b)=>a.localeCompare(b,undefined,{numeric:true})
-      );
-
-      let row=1;
-
-      classes.forEach((code,classIndex)=>{
-        const classRows=list.filter(x=>x.kodeKelas===code);
-
-        /* Judul */
-        ws.mergeCells(row,1,row,8);
-        const title=ws.getCell(row,1);
-
-        const classRooms=[...new Set(classRows.map(x=>clean(x.ruang)).filter(Boolean))].join(' / ');
-        title.value=
-          `${reg.toUpperCase()} ${code}${classRooms ? ' — RUANG ' + classRooms : ''}`;
-
-        title.font={
-          name:'Arial',
-          size:16,
-          bold:true
-        };
-
-        title.alignment={
-          horizontal:'center',
-          vertical:'middle'
-        };
-
-        title.fill={
-          type:'pattern',
-          pattern:'solid',
-          fgColor:{argb:'E2E8F0'}
-        };
-
-        title.border={
-          top:{style:'medium',color:{argb:'111827'}},
-          left:{style:'medium',color:{argb:'111827'}},
-          bottom:{style:'medium',color:{argb:'111827'}},
-          right:{style:'medium',color:{argb:'111827'}}
-        };
-
-        ws.getRow(row).height=28;
-        row++;
-
-        /* Semester otomatis dari dua digit awal kode */
-        const semesterMatch=String(code).match(/^(\\d{2})/);
-        const semester=semesterMatch
-          ? parseInt(semesterMatch[1],10)
-          : '';
-
-        ws.mergeCells(row,1,row,8);
-
-        const sub=ws.getCell(row,1);
-        sub.value=
-          semester
-          ? `Semester ${semester} • ${classRows.length} mata kuliah • Nama MK & SKS sudah dinormalisasi`
-          : `${classRows.length} mata kuliah • Nama MK & SKS sudah dinormalisasi`;
-
-        sub.font={
-          name:'Arial',
-          size:10,
-          italic:true,
-          color:{argb:'64748B'}
-        };
-
-        sub.alignment={
-          horizontal:'center',
-          vertical:'middle'
-        };
-
-        ws.getRow(row).height=20;
-        row++;
-
-        /* Data tabel */
-        const startTableRow=row;
-
-        const values=classRows.map((x,i)=>[
-          i+1,
-          mkFullName(x.mataKuliah),
-          getSks(x.mataKuliah),
-          x.ruang,
-          x.hari,
-          x.jamKe,
-          x.waktu,
-          teacherDisplay(x.dosen)
-        ]);
-
-        ws.addTable({
-          name:`T${reg.replace(/\\W/g,'')}${classIndex+1}${Date.now()%100000}`,
-          ref:`A${startTableRow}:H${startTableRow+values.length}`,
-          headerRow:true,
-          totalsRow:false,
-          style:{
-            theme:'TableStyleMedium2',
-            showFirstColumn:false,
-            showLastColumn:false,
-            showRowStripes:true,
-            showColumnStripes:false
-          },
-          columns:headers.map(h=>({name:h})),
-          rows:values
-        });
-
-        /* Styling header */
-        for(let c=1;c<=8;c++){
-          const cell=ws.getCell(startTableRow,c);
-
-          cell.font={
-            name:'Arial',
-            size:10,
-            bold:true,
-            color:{argb:'FFFFFF'}
-          };
-
-          cell.alignment={
-            horizontal:'center',
-            vertical:'middle',
-            wrapText:true
-          };
-        }
-
-        /* Styling data */
-        for(let r=startTableRow+1;r<=startTableRow+values.length;r++){
-          for(let c=1;c<=8;c++){
-            const cell=ws.getCell(r,c);
-
-            cell.font={
-              name:'Arial',
-              size:10
-            };
-
-            cell.alignment={
-              vertical:'middle',
-              wrapText:true
-            };
-
-            if([1,3,6].includes(c)){
-              cell.alignment.horizontal='center';
-            }
-          }
-
-          ws.getRow(r).height=22;
-        }
-
-        row=startTableRow+values.length+3;
-      });
+function getHeaderIndex(headers, candidates){
+    for(let i=0;i<headers.length;i++){
+        const h = norm(headers[i]);
+        if(candidates.some(c => h === norm(c) || h.includes(norm(c)))) return i;
     }
+    return -1;
+}
 
-    const safeReg=
-      regSelect.value==='ALL'
-      ? 'SEMUA_REG'
-      : regSelect.value.replace(/\\s+/g,'_');
-
-    const modePart=
-      modeSelect.value==='dosen'
-      ? 'DOSEN'
-      : modeSelect.value==='all'
-        ? 'SEMUA_KELAS'
-        : (classSelect.value||'KELAS');
-
-    const namePart=
-      nameMode.value==='full'
-      ? 'NAMA_LENGKAP'
-      : 'NAMA_EXCEL';
-
-    await out.xlsx.writeBuffer().then(buffer=>{
-      const blob=new Blob(
-        [buffer],
-        {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
-      );
-
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-
-      a.href=url;
-      a.download=`Jadwal_${safeReg}_${modePart}_${namePart}.xlsx`;
-
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      URL.revokeObjectURL(url);
-    });
-
-    classStatus.innerHTML=
-      '<div class="success">Excel berhasil dibuat dengan tabel terpisah per kelas.</div>';
-
-  }catch(err){
-    console.error(err);
-
-    classStatus.innerHTML=
-      `<div class="error">Gagal membuat Excel: ${escapeHtml(err.message||err)}</div>`;
-  }finally{
-    downloadButton.disabled=false;
-    downloadButton.textContent='Download Excel';
-  }
+function sheetRows(ws){
+    return XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
 }
 
 /* =========================================================
-   EVENT
+   PARSE EXCEL KODE KELAS -> RUANG
+   Dibuat fleksibel terhadap nama header.
    ========================================================= */
-excelFile.addEventListener('change',function(e){
-  const file=e.target.files[0];
-  if(!file) return;
+function parseRoomWorkbook(wb){
+    const map = {};
+    const rawRows = [];
 
-  fileStatus.innerHTML=
-    '<div class="info">Sedang membaca file Excel...</div>';
+    for(const sn of wb.SheetNames){
+        const rows = sheetRows(wb.Sheets[sn]);
+        if(!rows.length) continue;
 
-  const reader=new FileReader();
+        // cari baris header
+        let headerRow = -1;
+        let classCol = -1;
+        let roomCol = -1;
 
-  reader.onload=function(event){
+        for(let r=0;r<Math.min(rows.length,15);r++){
+            const headers = rows[r].map(x=>norm(x));
+            classCol = getHeaderIndex(headers,[
+                "KODE KELAS","KODE","CLASS CODE","KELAS"
+            ]);
+            roomCol = getHeaderIndex(headers,[
+                "RUANG","RUANGAN","ROOM","ROOM CODE"
+            ]);
+            if(classCol>=0 && roomCol>=0){
+                headerRow=r;
+                break;
+            }
+        }
+
+        if(headerRow<0) continue;
+
+        for(let r=headerRow+1;r<rows.length;r++){
+            const code=clean(rows[r][classCol]);
+            const room=clean(rows[r][roomCol]);
+            if(!code) continue;
+
+            const key=norm(code);
+            if(room){
+                map[key]=room;
+                rawRows.push({sheet:sn,classCode:code,room});
+            }
+        }
+    }
+
+    return {map,rows:rawRows};
+}
+
+/* =========================================================
+   PARSE JADWAL UTAMA
+   Menangkap blok kelas:
+   - baris judul "REG A 01AKSP001"
+   - baris header
+   - baris data sampai baris kosong/judul kelas berikutnya
+   ========================================================= */
+function parseScheduleWorkbook(wb){
+    const result=[];
+
+    for(const sheetName of wb.SheetNames){
+        const reg=normalizeReg(sheetName);
+        if(!reg) continue;
+
+        const rows=sheetRows(wb.Sheets[sheetName]);
+        let currentClass="";
+        let currentSemester="";
+        let header=null;
+
+        for(let r=0;r<rows.length;r++){
+            const row=rows[r].map(clean);
+            const joined=norm(row.join(" | "));
+
+            // Cari judul kelas
+            const classMatch=joined.match(/REG\s*(A|B|C|CS)\s+([A-Z0-9._-]+)/i);
+            if(classMatch){
+                currentClass=classMatch[2].trim();
+                const semMatch=joined.match(/SEMESTER\s*([0-9]+)/i);
+                if(semMatch) currentSemester=semMatch[1];
+                header=null;
+                continue;
+            }
+
+            // Cari header tabel
+            const upper=row.map(norm);
+            const noCol=getHeaderIndex(upper,["NO"]);
+            const mkCol=getHeaderIndex(upper,["MATA KULIAH","MATA KULIAH LENGKAP"]);
+            const dayCol=getHeaderIndex(upper,["HARI / KETERANGAN","HARI","KETERANGAN"]);
+            const timeCol=getHeaderIndex(upper,["WAKTU"]);
+            const jamCol=getHeaderIndex(upper,["JAM KE"]);
+            const dosenCol=getHeaderIndex(upper,["DOSEN PENGAMPU","DOSEN"]);
+
+            if(mkCol>=0 && (dayCol>=0 || timeCol>=0) && (noCol>=0 || jamCol>=0)){
+                header={noCol,mkCol,dayCol,timeCol,jamCol,dosenCol};
+                continue;
+            }
+
+            if(!header || !currentClass) continue;
+
+            const mkRaw=header.mkCol>=0 ? clean(row[header.mkCol]) : "";
+            if(!mkRaw) continue;
+
+            // Jangan membaca baris non-data
+            if(norm(mkRaw).includes("MATA KULIAH")) continue;
+
+            const day=header.dayCol>=0 ? clean(row[header.dayCol]) : "";
+            const waktu=header.timeCol>=0 ? clean(row[header.timeCol]) : "";
+            const jamKe=header.jamCol>=0 ? clean(row[header.jamCol]) : "";
+            const dosenRaw=header.dosenCol>=0 ? clean(row[header.dosenCol]) : "";
+
+            // Jika semuanya kosong, lewati
+            if(!day && !waktu && !dosenRaw && !jamKe) continue;
+
+            const [mkFull, sksMaster]=courseInfo(mkRaw);
+            const lecturerCodeValue=lecturerCode(dosenRaw);
+            const lecturerFull=fullLecturer(lecturerCodeValue,dosenRaw);
+            const tp=parseTimeParts(waktu);
+
+            result.push({
+                reg,
+                classCode:currentClass,
+                semester:currentSemester,
+                no:header.noCol>=0 ? clean(row[header.noCol]) : "",
+                mkRaw,
+                mk:mkFull,
+                sks:sksMaster,
+                ruang:clean(row[getHeaderIndex(upper,["RUANG","RUANGAN"])] || ""),
+                day,
+                jamKe,
+                waktu,
+                start:tp.start,
+                end:tp.end,
+                timeSort:tp.sort,
+                lecturerCode:lecturerCodeValue,
+                lecturer:lecturerFull,
+                sourceSheet:sheetName
+            });
+        }
+    }
+
+    // Fallback tambahan untuk sheet yang tidak punya header rapi:
+    // blok kelas masih bisa terbaca selama ada baris dengan mata kuliah + hari/waktu.
+    return result;
+}
+
+/* =========================================================
+   GABUNG RUANG
+   Prioritas:
+   1. ruang yang sudah ada di baris jadwal
+   2. Excel pasangan kode kelas -> ruang
+   ========================================================= */
+function mergeRooms(rows){
+    for(const x of rows){
+        const key=norm(x.classCode);
+        if(!x.ruang || norm(x.ruang)==="BELUM DIISI" || norm(x.ruang)==="BELUM DIISI") {
+            x.ruang=roomMap[key] || "";
+        }
+        if(!x.ruang) x.ruang="Belum diisi";
+    }
+}
+
+/* =========================================================
+   SORT: REG -> KELAS -> HARI -> JAM
+   Saat melihat satu kelas, otomatis SENIN dulu.
+   ========================================================= */
+function sortRows(rows){
+    return [...rows].sort((a,b)=>{
+        const regCmp={A:1,B:2,C:3}[a.reg]-({A:1,B:2,C:3}[b.reg]||99);
+        if(regCmp) return regCmp;
+
+        const c=String(a.classCode).localeCompare(String(b.classCode),undefined,{numeric:true});
+        if(c) return c;
+
+        const d=dayOrder(a.day)-dayOrder(b.day);
+        if(d) return d;
+
+        const t=a.timeSort-b.timeSort;
+        if(t) return t;
+
+        return String(a.mk).localeCompare(String(b.mk));
+    });
+}
+
+/* =========================================================
+   LOAD FILE
+   ========================================================= */
+async function loadAllFiles(){
+    const scheduleInput=document.getElementById("scheduleFile");
+    const roomInput=document.getElementById("roomFile");
+    const msg=document.getElementById("uploadMsg");
+
+    if(!scheduleInput.files[0]){
+        setMsg(msg,"Pilih Excel jadwal terlebih dahulu.","err");
+        return;
+    }
+    if(!roomInput.files[0]){
+        setMsg(msg,"Pilih juga Excel Kode Kelas & Ruangan. Ini yang dipakai untuk mengisi kolom ruang.","err");
+        return;
+    }
+
     try{
-      workbook=XLSX.read(
-        new Uint8Array(event.target.result),
-        {type:'array',cellDates:true}
-      );
+        setMsg(msg,"Sedang membaca kedua file...","info");
 
-      loadAllData();
+        const scheduleBuffer=await scheduleInput.files[0].arrayBuffer();
+        const roomBuffer=await roomInput.files[0].arrayBuffer();
 
-      const sheets=workbook.SheetNames.filter(s=>regFromSheet(s));
-      const flatSheets=workbook.SheetNames.filter(s=>!regFromSheet(s) && isFlatScheduleSheet(s));
-      const sourceSheets=[...sheets,...flatSheets];
+        scheduleWorkbook=XLSX.read(scheduleBuffer,{type:"array"});
+        const roomWorkbook=XLSX.read(roomBuffer,{type:"array"});
 
-      const countA=allRecords.filter(x=>x.reg==='Reg A').length;
-      const countB=allRecords.filter(x=>x.reg==='Reg B').length;
-      const countC=allRecords.filter(x=>x.reg==='Reg C').length;
+        const parsedSchedule=parseScheduleWorkbook(scheduleWorkbook);
+        const roomData=parseRoomWorkbook(roomWorkbook);
 
-      fileStatus.innerHTML=`
-        <div class="success">
-          File berhasil dibaca.
-          Sumber jadwal: <b>${sourceSheets.join(', ')}</b>.
-          Total <b>${allRecords.length}</b> baris jadwal.
-          <br>
-          Reg A: <b>${countA}</b> •
-          Reg B: <b>${countB}</b> •
-          Reg C/CS: <b>${countC}</b>
-        </div>`;
+        roomMap=roomData.map;
+        roomRows=roomData.rows;
 
-      showButton.disabled=false;
+        allRows=sortRows(parsedSchedule);
+        mergeRooms(allRows);
+
+        // Hitung ulang setelah room merge
+        allRows=sortRows(allRows);
+
+        if(!allRows.length){
+            setMsg(msg,
+                "File terbaca tetapi baris jadwal tidak ditemukan. Pastikan sheet berisi Reg A, Reg B, dan/atau Reg CS dengan kolom Mata Kuliah, Hari, Waktu, dan Dosen.",
+                "err"
+            );
+            return;
+        }
+
+        const a=allRows.filter(x=>x.reg==="A").length;
+        const b=allRows.filter(x=>x.reg==="B").length;
+        const c=allRows.filter(x=>x.reg==="C").length;
+
+        document.getElementById("stats").style.display="grid";
+        document.getElementById("statRows").textContent=allRows.length;
+        document.getElementById("statA").textContent=a;
+        document.getElementById("statB").textContent=b;
+        document.getElementById("statC").textContent=c;
+
+        setMsg(
+            msg,
+            `Berhasil. ${allRows.length} baris jadwal terbaca. Reg A: ${a} • Reg B: ${b} • Reg C/CS: ${c}. ${Object.keys(roomMap).length} kode kelas memiliki data ruang.`,
+            "ok"
+        );
+
+        refreshControls();
+        renderCurrent();
+        document.getElementById("downloadBtn").disabled=false;
 
     }catch(err){
-      console.error(err);
-
-      fileStatus.innerHTML=
-        '<div class="error">File Excel gagal dibaca. Coba upload ulang file .xlsx.</div>';
+        console.error(err);
+        setMsg(msg,"Gagal membaca Excel: "+err.message,"err");
     }
-  };
+}
 
-  reader.readAsArrayBuffer(file);
-});
+/* =========================================================
+   FILTER / CONTROL
+   ========================================================= */
+function filteredBase(){
+    const reg=document.getElementById("regSelect").value;
+    let rows=allRows;
 
-regSelect.addEventListener('change',function(){
-  populateClasses();
-  populateDosen();
-  updateControls();
-  result.innerHTML='';
-  downloadButton.disabled=true;
-});
+    if(reg!=="ALL") rows=rows.filter(x=>x.reg===reg);
 
-modeSelect.addEventListener('change',function(){
-  updateControls();
-  result.innerHTML='';
-  downloadButton.disabled=true;
-});
+    return rows;
+}
 
-nameMode.addEventListener('change',function(){
-  if(displayedRecords.length){
-    if(modeSelect.value==='dosen'){
-      displayDosen();
+function refreshControls(){
+    const mode=document.getElementById("modeSelect").value;
+    const base=filteredBase();
+
+    document.getElementById("classBox").style.display=mode==="CLASS" ? "block":"block";
+    document.getElementById("lecturerBox").style.display=mode==="LECTURER" ? "block":"none";
+
+    const classSelect=document.getElementById("classSelect");
+    const classes=[...new Set(base.map(x=>x.classCode).filter(Boolean))]
+        .sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
+
+    classSelect.innerHTML='<option value="">Semua Kelas</option>'+
+        classes.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+    const lecturerSelect=document.getElementById("lecturerSelect");
+    const lecturers={};
+
+    for(const x of base){
+        if(!x.lecturerCode) continue;
+        lecturers[x.lecturerCode]=x.lecturer;
+    }
+
+    const sortedLecturers=Object.entries(lecturers)
+        .sort((a,b)=>String(a[1]).localeCompare(String(b[1])));
+
+    lecturerSelect.innerHTML='<option value="">Pilih nama dosen</option>'+
+        sortedLecturers.map(([code,name])=>
+            `<option value="${esc(code)}">${esc(name)} [${esc(code)}]</option>`
+        ).join("");
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderCurrent(){
+    if(!allRows.length) return;
+
+    const mode=document.getElementById("modeSelect").value;
+    const base=filteredBase();
+    let rows=base;
+
+    if(mode==="CLASS"){
+        const c=document.getElementById("classSelect").value;
+        if(c) rows=rows.filter(x=>x.classCode===c);
+    }
+
+    if(mode==="LECTURER"){
+        const code=document.getElementById("lecturerSelect").value;
+        if(!code){
+            document.getElementById("result").innerHTML='<div class="empty">Pilih nama dosen terlebih dahulu.</div>';
+            document.getElementById("lecturerSummaryCard").style.display="none";
+            return;
+        }
+        rows=rows.filter(x=>norm(x.lecturerCode)===norm(code));
+    }
+
+    rows=sortRows(rows);
+    renderRows(rows);
+
+    if(mode==="LECTURER"){
+        renderLecturerSummary(rows);
     }else{
-      showData();
+        document.getElementById("lecturerSummaryCard").style.display="none";
     }
-  }
-});
+}
 
-showButton.addEventListener('click',showData);
-downloadButton.addEventListener('click',downloadExcel);
+function renderRows(rows){
+    const result=document.getElementById("result");
+
+    if(!rows.length){
+        result.innerHTML='<div class="empty">Tidak ada data yang cocok.</div>';
+        return;
+    }
+
+    const groups={};
+    for(const x of rows){
+        const key=x.reg+"||"+x.classCode;
+        if(!groups[key]) groups[key]=[];
+        groups[key].push(x);
+    }
+
+    let html="";
+
+    for(const [key,group] of Object.entries(groups)){
+        const first=group[0];
+        const room=group.find(x=>x.ruang && norm(x.ruang)!=="BELUM DIISI")?.ruang || "Belum diisi";
+        const clash=findClashes(group);
+
+        html+=`
+        <div class="class-card">
+            <div class="class-head">
+                <h3>REG ${esc(first.reg)} ${esc(first.classCode)}</h3>
+                <div class="class-meta">
+                    Semester <b>${esc(first.semester || "-")}</b>
+                    • Kelas: <b>${esc(first.classCode)}</b>
+                    • Ruang: <b>${esc(room)}</b>
+                    • ${group.length} mata kuliah
+                    ${clash.length ? `• <span class="danger">⚠ ${clash.length} bentrok</span>` : ""}
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>NO</th>
+                            <th>MATA KULIAH LENGKAP</th>
+                            <th>SKS</th>
+                            <th>RUANG</th>
+                            <th>HARI</th>
+                            <th>JAM KE</th>
+                            <th>WAKTU</th>
+                            <th>DOSEN PENGAMPU</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${group.map((x,i)=>rowHTML(x,i+1,clash)).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    result.innerHTML=html;
+}
+
+function rowHTML(x,index,clashes){
+    const isClash=clashes.some(c=>c===x);
+    const displayMode=document.getElementById("lecturerDisplay").value;
+    let dosen="";
+
+    if(displayMode==="CODE"){
+        dosen=x.lecturerCode || x.lecturer || "-";
+    }else if(displayMode==="BOTH"){
+        dosen=`${x.lecturer || "-"}<div class="small muted">Kode: ${esc(x.lecturerCode || "-")}</div>`;
+    }else{
+        dosen=x.lecturer || x.lecturerCode || "-";
+        if(x.lecturerCode && x.lecturer){
+            dosen+=`<div class="small muted">Kode: ${esc(x.lecturerCode)}</div>`;
+        }
+    }
+
+    return `
+    <tr class="${isClash ? "danger":""}">
+        <td>${esc(x.no || index)}</td>
+        <td>
+            <b>${esc(x.mk)}</b>
+            ${norm(x.mkRaw)!==norm(x.mk) ? `<div class="small muted">Nama di Excel: ${esc(x.mkRaw)}</div>`:""}
+        </td>
+        <td>${x.sks ?? "-"}</td>
+        <td><b>${esc(x.ruang || "Belum diisi")}</b></td>
+        <td>${esc(x.day)}</td>
+        <td>${esc(x.jamKe)}</td>
+        <td>${esc(x.waktu || ((x.start && x.end)?x.start+" - "+x.end:""))}</td>
+        <td><b>${dosen}</b>${isClash ? `<div class="small danger">⚠ Potensi bentrok dosen</div>`:""}</td>
+    </tr>`;
+}
+
+/* =========================================================
+   REKAP DOSEN
+   Contoh:
+   Ririn -> Reg A: 6 kelas / 8 MK
+            Reg B: 4 kelas / 7 MK
+            Total: 10 kelas / 15 MK
+   ========================================================= */
+function renderLecturerSummary(rows){
+    const card=document.getElementById("lecturerSummaryCard");
+    const box=document.getElementById("lecturerSummary");
+    card.style.display="block";
+
+    if(!rows.length){
+        box.innerHTML='<div class="empty">Tidak ada jadwal dosen.</div>';
+        return;
+    }
+
+    const lecturer=rows[0];
+    const byReg={A:[],B:[],C:[]};
+
+    rows.forEach(x=>{
+        if(!byReg[x.reg]) byReg[x.reg]=[];
+        byReg[x.reg].push(x);
+    });
+
+    let totalClasses=new Set(rows.map(x=>x.reg+"||"+x.classCode)).size;
+    let totalMK=rows.length;
+    let totalSKS=rows.reduce((s,x)=>s+(Number(x.sks)||0),0);
+
+    let html=`
+        <div class="summary-grid">
+            <div class="stat">
+                <div class="muted">Dosen</div>
+                <div style="font-weight:800">${esc(lecturer.lecturer)}</div>
+                <div class="small muted">Kode: ${esc(lecturer.lecturerCode)}</div>
+            </div>
+            <div class="stat">
+                <div class="muted">Total Kelas</div>
+                <div class="num">${totalClasses}</div>
+            </div>
+            <div class="stat">
+                <div class="muted">Total Mata Kuliah</div>
+                <div class="num">${totalMK}</div>
+            </div>
+            <div class="stat">
+                <div class="muted">Total SKS</div>
+                <div class="num">${totalSKS}</div>
+            </div>
+        </div>
+        <div class="table-wrap" style="margin-top:18px">
+        <table>
+            <thead>
+                <tr>
+                    <th>REG</th>
+                    <th>JUMLAH KELAS</th>
+                    <th>KELAS YANG DIAMPU</th>
+                    <th>JUMLAH MATA KULIAH</th>
+                    <th>TOTAL SKS</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+    for(const reg of ["A","B","C"]){
+        const arr=byReg[reg];
+        if(!arr.length) continue;
+
+        const classes=[...new Set(arr.map(x=>x.classCode))]
+            .sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}));
+        const sks=arr.reduce((s,x)=>s+(Number(x.sks)||0),0);
+
+        html+=`
+            <tr>
+                <td><b>Reg ${reg}</b></td>
+                <td>${classes.length}</td>
+                <td>${classes.map(c=>`<span class="badge">${esc(c)}</span>`).join(" ")}</td>
+                <td>${arr.length}</td>
+                <td>${sks}</td>
+            </tr>`;
+    }
+
+    html+=`</tbody></table></div>`;
+
+    box.innerHTML=html;
+}
+
+/* =========================================================
+   CEK BENTROK DOSEN
+   Bentrok jika dosen sama, hari sama, dan waktu overlap.
+   ========================================================= */
+function findClashes(rows){
+    const bad=new Set();
+
+    for(let i=0;i<rows.length;i++){
+        for(let j=i+1;j<rows.length;j++){
+            const a=rows[i], b=rows[j];
+
+            if(norm(a.lecturerCode)!==norm(b.lecturerCode)) continue;
+            if(dayOrder(a.day)!==dayOrder(b.day)) continue;
+
+            const aStart=timeValue(a.start || a.waktu);
+            const aEnd=timeValue(a.end || a.waktu);
+            const bStart=timeValue(b.start || b.waktu);
+            const bEnd=timeValue(b.end || b.waktu);
+
+            if(aStart < bEnd && bStart < aEnd){
+                bad.add(a); bad.add(b);
+            }
+        }
+    }
+    return [...bad];
+}
+
+/* =========================================================
+   EXPORT EXCEL
+   PENTING:
+   TIDAK menggunakan ws['!tables'].
+   Semua "tabel" dibuat sebagai range biasa dengan style,
+   sehingga tidak muncul lagi error:
+   "Table must have row definitions".
+   ========================================================= */
+function downloadExcel(){
+    if(!allRows.length){
+        alert("Belum ada data.");
+        return;
+    }
+
+    const wb=XLSX.utils.book_new();
+
+    // Export sesuai filter saat ini
+    const mode=document.getElementById("modeSelect").value;
+    let rows=filteredBase();
+
+    if(mode==="CLASS"){
+        const c=document.getElementById("classSelect").value;
+        if(c) rows=rows.filter(x=>x.classCode===c);
+    }
+    if(mode==="LECTURER"){
+        const code=document.getElementById("lecturerSelect").value;
+        if(code) rows=rows.filter(x=>norm(x.lecturerCode)===norm(code));
+    }
+
+    rows=sortRows(rows);
+
+    const regs=[
+        ["A","Reg A"],
+        ["B","Reg B"],
+        ["C","Reg C-CS"]
+    ];
+
+    for(const [reg,sheetName] of regs){
+        const regRows=rows.filter(x=>x.reg===reg);
+        if(!regRows.length) continue;
+
+        const ws=buildExportSheet(regRows,sheetName);
+        XLSX.utils.book_append_sheet(wb,ws,safeSheetName(sheetName));
+    }
+
+    // Sheet rekap dosen jika sedang mode dosen
+    if(mode==="LECTURER"){
+        const code=document.getElementById("lecturerSelect").value;
+        if(code){
+            const lr=rows.filter(x=>norm(x.lecturerCode)===norm(code));
+            if(lr.length){
+                const ws=buildLecturerExport(lr);
+                XLSX.utils.book_append_sheet(wb,ws,"Rekap Dosen");
+            }
+        }
+    }
+
+    // Jika tidak ada sheet karena filter aneh
+    if(!wb.SheetNames.length){
+        alert("Tidak ada data untuk diekspor.");
+        return;
+    }
+
+    // Freeze + proper widths
+    for(const sn of wb.SheetNames){
+        wb.Sheets[sn]["!freeze"]={xSplit:0,ySplit:1};
+    }
+
+    const filename="Jadwal_Akuntansi_Rapi_"+new Date().toISOString().slice(0,10)+".xlsx";
+
+    try{
+        XLSX.writeFile(wb,filename);
+    }catch(err){
+        console.error(err);
+        alert("Gagal membuat Excel: "+err.message);
+    }
+}
+
+function buildExportSheet(rows,sheetName){
+    const aoa=[];
+    const merges=[];
+
+    const displayMode=document.getElementById("lecturerDisplay").value;
+
+    const headers=[
+        "NO","MATA KULIAH LENGKAP","SKS","RUANG",
+        "HARI / KETERANGAN","JAM KE","WAKTU","DOSEN PENGAMPU"
+    ];
+
+    let currentClass="";
+    let classStartRow=0;
+
+    // Baris judul sheet
+    aoa.push([`JADWAL PERKULIAHAN ${sheetName}`]);
+    aoa.push(["Generated oleh Sistem Jadwal Prodi Akuntansi"]);
+    aoa.push([]);
+
+    for(const x of rows){
+        if(x.classCode!==currentClass){
+            currentClass=x.classCode;
+            const group=rows.filter(y=>y.classCode===currentClass);
+            const room=group.find(y=>y.ruang && norm(y.ruang)!=="BELUM DIISI")?.ruang || "Belum diisi";
+
+            if(aoa.length>3) aoa.push([]);
+
+            classStartRow=aoa.length;
+            aoa.push([`REG ${x.reg} ${x.classCode}`]);
+            aoa.push([`Semester ${x.semester || "-"} | Kelas ${x.classCode} | Ruang ${room} | ${group.length} mata kuliah`]);
+            aoa.push(headers);
+
+            // merge judul sampai H
+            merges.push({s:{r:classStartRow,c:0},e:{r:classStartRow,c:7}});
+            merges.push({s:{r:classStartRow+1,c:0},e:{r:classStartRow+1,c:7}});
+        }
+
+        let dosen=x.lecturer || x.lecturerCode || "";
+        if(displayMode==="CODE"){
+            dosen=x.lecturerCode || "";
+        }else if(displayMode==="BOTH"){
+            dosen=(x.lecturer || "") + (x.lecturerCode ? ` [${x.lecturerCode}]`:"");
+        }
+
+        aoa.push([
+            x.no || "",
+            x.mk || x.mkRaw || "",
+            x.sks ?? "",
+            x.ruang || "Belum diisi",
+            x.day || "",
+            x.jamKe || "",
+            x.waktu || ((x.start&&x.end)?`${x.start} - ${x.end}`:""),
+            dosen
+        ]);
+    }
+
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+
+    // style dasar
+    const border={
+        top:{style:"thin",color:{rgb:"D1D5DB"}},
+        bottom:{style:"thin",color:{rgb:"D1D5DB"}},
+        left:{style:"thin",color:{rgb:"D1D5DB"}},
+        right:{style:"thin",color:{rgb:"D1D5DB"}}
+    };
+
+    for(let r=0;r<aoa.length;r++){
+        for(let c=0;c<8;c++){
+            const cell=ws[XLSX.utils.encode_cell({r,c})];
+            if(!cell) continue;
+            cell.alignment={vertical:"center",wrap_text:true};
+        }
+    }
+
+    // Judul utama
+    ws["A1"].font={bold:true,size:16};
+    ws["A1"].alignment={horizontal:"center",vertical:"center"};
+    ws["A2"].font={italic:true,color:{rgb:"64748B"}};
+    ws["A2"].alignment={horizontal:"center"};
+
+    // Cari semua header dan class title berdasarkan isi
+    for(let r=0;r<aoa.length;r++){
+        const first=clean(aoa[r][0]);
+
+        if(first.startsWith("REG ") && aoa[r].length===1){
+            const cell=ws[`A${r+1}`];
+            cell.font={bold:true,size:14};
+            cell.alignment={horizontal:"left",vertical:"center"};
+            cell.fill={fgColor:{rgb:"E2E8F0"}};
+        }
+
+        if(first==="NO" && aoa[r][1]==="MATA KULIAH LENGKAP"){
+            for(let c=0;c<8;c++){
+                const cell=ws[XLSX.utils.encode_cell({r,c})];
+                cell.font={bold:true,color:{rgb:"FFFFFF"}};
+                cell.fill={fgColor:{rgb:"111827"}};
+                cell.alignment={horizontal:"center",vertical:"center",wrap_text:true};
+                cell.border=border;
+            }
+        }
+    }
+
+    // Border semua data
+    for(let r=0;r<aoa.length;r++){
+        for(let c=0;c<8;c++){
+            const cell=ws[XLSX.utils.encode_cell({r,c})];
+            if(!cell) continue;
+            if(r>=2) cell.border=border;
+        }
+    }
+
+    ws["!merges"]=merges;
+
+    ws["!cols"]=[
+        {wch:7},
+        {wch:34},
+        {wch:8},
+        {wch:16},
+        {wch:22},
+        {wch:10},
+        {wch:17},
+        {wch:38}
+    ];
+
+    ws["!rows"]=[
+        {hpt:24},
+        {hpt:20}
+    ];
+
+    // Auto filter: hanya header terakhir tidak aman untuk banyak tabel.
+    // Karena satu sheet berisi banyak tabel terpisah, sengaja tidak
+    // memakai !autofilter supaya struktur tiap kelas tetap rapi.
+
+    return ws;
+}
+
+function buildLecturerExport(rows){
+    const byReg={A:[],B:[],C:[]};
+    rows.forEach(x=>byReg[x.reg].push(x));
+
+    const first=rows[0];
+    const aoa=[
+        ["REKAP DOSEN"],
+        [first.lecturer || first.lecturerCode],
+        [`Kode Dosen: ${first.lecturerCode}`],
+        [],
+        ["REG","JUMLAH KELAS","KELAS","JUMLAH MATA KULIAH","TOTAL SKS"]
+    ];
+
+    for(const reg of ["A","B","C"]){
+        if(!byReg[reg].length) continue;
+        const classes=[...new Set(byReg[reg].map(x=>x.classCode))].sort();
+        const sks=byReg[reg].reduce((s,x)=>s+(Number(x.sks)||0),0);
+        aoa.push([
+            "Reg "+reg,
+            classes.length,
+            classes.join(", "),
+            byReg[reg].length,
+            sks
+        ]);
+    }
+
+    const totalClasses=new Set(rows.map(x=>x.reg+"||"+x.classCode)).size;
+    const totalMK=rows.length;
+    const totalSKS=rows.reduce((s,x)=>s+(Number(x.sks)||0),0);
+
+    aoa.push([]);
+    aoa.push(["TOTAL",totalClasses,"",totalMK,totalSKS]);
+
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+
+    for(let c=0;c<5;c++){
+        const cell=ws[XLSX.utils.encode_cell({r:4,c})];
+        if(cell){
+            cell.font={bold:true,color:{rgb:"FFFFFF"}};
+            cell.fill={fgColor:{rgb:"111827"}};
+            cell.alignment={horizontal:"center",vertical:"center",wrap_text:true};
+        }
+    }
+
+    ws["A1"].font={bold:true,size:16};
+    ws["A2"].font={bold:true,size:14};
+
+    ws["!cols"]=[
+        {wch:14},{wch:16},{wch:55},{wch:22},{wch:14}
+    ];
+
+    return ws;
+}
+
+function safeSheetName(name){
+    return name.replace(/[\\/?*[\]:]/g,"").slice(0,31);
+}
+
+function setMsg(el,text,type){
+    el.textContent=text;
+    el.className="msg "+type;
+}
+
+function esc(v){
+    return String(v ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+document.getElementById("regSelect").addEventListener("change",refreshControls);
+document.getElementById("modeSelect").addEventListener("change",refreshControls);
+document.getElementById("classSelect").addEventListener("change",renderCurrent);
+document.getElementById("lecturerSelect").addEventListener("change",renderCurrent);
 </script>
 </body>
 </html>
