@@ -402,90 +402,341 @@ function mkFullName(name){
 }
 
 /* =========================================================
-   MASTER SKS MATA KULIAH
-   Berdasarkan daftar SKS yang diberikan pengguna.
-   Skripsi dibiarkan kosong karena jumlah SKS tidak diberikan.
+   MASTER DATA KELAS + RUANG + SKS
+   SUMBER UTAMA: sheet "Data Kelas Ruangan dan SKS"
+   Tidak lagi memakai daftar SKS hard-code sebagai patokan.
    ========================================================= */
-const SKS_MASTER={
-  "Pendidikan Agama":2,
-  "Pendidikan Pancasila":2,
-  "Bahasa Inggris 1":2,
-  "Matematika Ekonomi":3,
-  "Pengantar Ilmu Ekonomi Mikro":2,
-  "Pengantar Akuntansi 1":3,
-  "Pengantar Bisnis":2,
-  "Pengantar Manajemen":3,
-  "Pengantar Akuntansi 2":3,
-  "Hukum Bisnis dan Regulasi":3,
-  "Ekonomi Makro":2,
-  "Kewirausahaan":3,
-  "Pengantar Aplikasi Komputer":2,
-  "Bahasa Inggris 2":2,
-  "Bahasa Indonesia":2,
-  "Kewarganegaraan":2,
-  "Perpajakan 1":3,
-  "Auditing 1":3,
-  "Akuntansi Keuangan 1":3,
-  "Sistem Informasi Akuntansi":3,
-  "Akuntansi Biaya":3,
-  "Manajemen Pemasaran":3,
-  "Perekonomian Indonesia":2,
-  "Perpajakan 2":3,
-  "Auditing 2":3,
-  "Akuntansi Keuangan 2":3,
-  "Akuntansi Manajemen":3,
-  "Ekonomi Syariah":2,
-  "Statistik Deskriptif":3,
-  "Perilaku Organisasi":3,
-  "Akuntansi Perpajakan":3,
-  "Akuntansi Keuangan Lanjutan 1":3,
-  "Akuntansi Sektor Publik":3,
-  "Teori Akuntansi":2,
-  "Statistik Inferensial":3,
-  "Sistem Informasi Manajemen":3,
-  "Komunikasi Bisnis":2,
-  "Akuntansi Lingkungan":3,
-  "Internal Audit":3,
-  "Akuntansi Keuangan Lanjutan 2":3,
-  "Audit Investigasi dan Forensik":3,
-  "Metodologi Penelitian":3,
-  "Sistem Pengendalian Manajemen":3,
-  "Etika Bisnis dan Profesi":3,
-  "Bank dan Lembaga Keuangan":3,
-  "Manajemen Keuangan":3,
-  "Analisis Laporan Keuangan":3,
-  "Pajak dan Retribusi":3,
-  "Pengukuran Kinerja":3,
-  "Komputer Akuntansi":2,
-  "Sustainability Accounting":3,
-  "Analisis Laporan Keuangan":3,
-  "Manajemen Strategik":3,
-  "Manajemen Investasi":2,
-  "Corporate Social Responsibility":3,
-  "Manajemen Resiko":3,
-  "Seminar Akuntansi Keuangan":3,
-  "Corporate Governance":3,
-  "Skripsi":null,
-  "Teknologi Informasi":null
-};
+let CLASS_ROOM_SKS_MASTER={};
+let COURSE_CLASS_MASTER={};
 
-function normalizeCourseKey(v){
-  return clean(v).toLowerCase()
-    .replace(/\s+/g,' ')
-    .replace(/[‐‑–—]/g,'-')
-    .trim();
+function classLookupKey(v){
+  return clean(v).toUpperCase().replace(/\s+/g,'').trim();
 }
 
-const SKS_MASTER_NORMALIZED=Object.fromEntries(
-  Object.entries(SKS_MASTER).map(([k,v])=>[normalizeCourseKey(k),v])
-);
+function sourceCourseKey(v){
+  return normalizeCourseKey(v);
+}
 
-function getSks(courseName){
-  const full=mkFullName(courseName);
-  const key=normalizeCourseKey(full);
-  return Object.prototype.hasOwnProperty.call(SKS_MASTER_NORMALIZED,key)
-    ? SKS_MASTER_NORMALIZED[key]
-    : '';
+/* Alias untuk nama singkat yang muncul di sheet jadwal.
+   Nilai alias harus mengarah ke NAMA_MATA_KULIAH pada sheet sumber. */
+const SOURCE_COURSE_ALIAS={
+  "AGAMA":"Agama Islam",
+  "PENDIDIKAN AGAMA":"Agama Islam",
+  "PANCASILA":"Pancasila",
+  "PENDIDIKAN PANCASILA":"Pancasila",
+  "BASIC ENGLISH":"Basic English for International Communication",
+  "BAHASA INGGRIS 1":"Basic English for International Communication",
+  "MATEMATIKA":"Matematika Ekonomi dan Bisnis",
+  "MATEMATIKA EKONOMI":"Matematika Ekonomi dan Bisnis",
+  "ECONOMIC":"Economics",
+  "ECONOMICS":"Economics",
+  "PIE MIKRO":"Economics",
+  "AKUN JASA":"Akuntansi Perusahaan Jasa dan Dagang",
+  "AK JASA":"Akuntansi Perusahaan Jasa dan Dagang",
+  "AK PERSH JASA":"Akuntansi Perusahaan Jasa dan Dagang",
+  "AKUNTANSI JASA":"Akuntansi Perusahaan Jasa dan Dagang",
+  "PENGANTAR AKUNTANSI 1":"Akuntansi Perusahaan Jasa dan Dagang",
+  "PRICIPLES OF MANAGEMENT":"Principles of Management and Business",
+  "PRINCIPLES OF MANAGEMENT":"Principles of Management and Business",
+  "PENGANTAR MANAJEMEN":"Principles of Management and Business",
+  "PENGANTAR BISNIS":"Principles of Management and Business",
+  "TEKNOLOGI INFORMASI":"Teknologi Informasi Dasar",
+  "TEKNOLOGI DASAR":"Teknologi Informasi Dasar",
+
+  "PA 2":"Pengantar Akuntansi 2",
+  "B.INGGRIS 2":"Bahasa Inggris 2",
+  "B ING 2":"Bahasa Inggris 2",
+  "B.INDO":"Bahasa Indonesia",
+  "B INDO":"Bahasa Indonesia",
+  "PKN":"Pendidikan Kewarganegaraan",
+  "KEWARGANEGARAAN":"Pendidikan Kewarganegaraan",
+  "APLIKOM":"Pengantar Aplikasi Komputer",
+  "MAKRO":"Pengantar Ilmu Ekonomi Makro",
+  "PIE MAKRO":"Pengantar Ilmu Ekonomi Makro",
+  "KEWIRAUSAHAAN":"Kewirausahaan/Entrepreneurship",
+  "HBR":"Hukum Bisnis dan Regulasi",
+
+  "AK 1":"Akuntansi Keuangan 1",
+  "AUDITING":"Auditing 1",
+  "AUDITING 1":"Auditing 1",
+  "SIA":"Sistem Informasi Akuntansi",
+  "AKBI":"Akuntansi Biaya",
+  "MANAJ PEMASARAN":"Manajemen Pemasaran",
+  "MANJ PEMASARAN":"Manajemen Pemasaran",
+  "MNJ PEMSRN":"Manajemen Pemasaran",
+  "MNJ PEMASARN":"Manajemen Pemasaran",
+  "MNJ PEMASRN":"Manajemen Pemasaran",
+  "PREKIN":"Perekonomian Indonesia",
+  "PREKONOMIAN IND":"Perekonomian Indonesia",
+
+  "AK 2":"Akuntansi Keuangan 2",
+  "AUDITING 2":"Auditing 2",
+  "AKMEN":"Akuntansi Manajemen",
+  "EK. SYARIAH":"Ekonomi Syariah",
+  "EK SYARIAH":"Ekonomi Syariah",
+  "STATISTIK DES":"Statistik Deskriptif",
+  "PRILAKU ORG":"Perilaku Organisasional",
+  "PRILAKU OR":"Perilaku Organisasional",
+
+  "AK. PAJAK":"Akuntansi Perpajakan",
+  "AK.PERPJAKAN":"Akuntansi Perpajakan",
+  "AK LINGKUNGAN":"Akuntansi Lingkungan",
+  "AK. LINGKUNGAN":"Akuntansi Lingkungan",
+  "AK SEKTOR":"Akuntansi Sektor Publik",
+  "AK SEKTOR PUBLIK":"Akuntansi Sektor Publik",
+  "TEORI AK":"Teori Akuntansi",
+  "TEORI AKUN":"Teori Akuntansi",
+  "INFERENSIAL":"Statistik Inferensial",
+  "SIM":"Sistem Informasi Manajemen",
+  "KOMBIS":"Komunikasi Bisnis",
+  "INTERNAL AUDIT":"Internal Audit",
+
+  "AKL 2":"Akuntansi Keuangan Lanjutan 2",
+  "AUDIT FORNSIK":"Audit Investigasi dan Forensik",
+  "METLIT":"Metodelogi Penelitian",
+  "SPM":"Sistem Pengendalian Manajemen",
+  "ETIKA BISNIS":"Etika Bisnis dan Profesi",
+  "BLK":"Bank dan Lembaga Keuangan Lainnya",
+  "MANJ KEU":"Manajemen Keuangan",
+  "MANJ  KEU":"Manajemen Keuangan",
+  "MANAJ KEU":"Manajemen Keuangan",
+  "MANAJEMEN KEUANGAN":"Manajemen Keuangan",
+  "MANAJEMN KEU":"Manajemen Keuangan",
+  "ALK":"Analisis Laporan Keuangan",
+  "PAJAK& RETRIBUSI":"Pajak dan Restribusi Daerah",
+  "PENG. KINERJA":"Pengukuran Kinerja",
+
+  "KOMPUTER AK":"Komputer Akuntansi",
+  "SUSTAIN":"Sustainibility Accounting",
+  "SUSTENIBILITY":"Sustainibility Accounting",
+  "SUSTAIN ACC":"Sustainibility Accounting",
+  "MANJ STRATEGIK":"Manajemen Stratejik",
+  "MANAJ STRATEGIK":"Manajemen Stratejik",
+  "MANAJEM STRAT":"Manajemen Stratejik",
+  "MANJ INVES":"Manajemen Investasi",
+  "MANJ INVESTASI":"Manajemen Investasi",
+  "MANJ RESIKO":"Manajemen Risiko",
+  "MNJ RESIKO":"Manajemen Risiko",
+  "CSR":"Corporate Social Responsibility",
+  "TAX PLANNING":"Tax Planning",
+  "TAX PLANING":"Tax Planning",
+  "EDP AUDIT":"EDP Audit",
+
+  "SEMINAR AKUNTANSI":"Seminar Akuntansi Keuangan",
+  "SEMINR AK":"Seminar Akuntansi Keuangan",
+  "CG":"Corporate Governance",
+  "CORPORATE G":"Corporate Governance"
+};
+
+function loadClassRoomSksMaster(){
+  CLASS_ROOM_SKS_MASTER={};
+  COURSE_CLASS_MASTER={};
+
+  const sheetName=workbook.SheetNames.find(
+    s=>normalize(s)==='DATA KELAS RUANGAN DAN SKS'
+  );
+
+  if(!sheetName) return;
+
+  const ws=workbook.Sheets[sheetName];
+  const data=XLSX.utils.sheet_to_json(
+    ws,
+    {header:1,defval:'',raw:false}
+  );
+
+  if(!data.length) return;
+
+  const headers=(data[0]||[]).map(normalizeHeader);
+  const iKelas=headerIndex(headers,'KELAS');
+  const iSemester=headerIndex(headers,'SEMESTER');
+  const iRoom=headerIndex(headers,'RUANG','RUANGAN');
+  const iMk=headerIndex(headers,'MATA_KULIAH','MATA KULIAH');
+  const iSks=headerIndex(headers,'SKS');
+
+  if(iKelas<0 || iRoom<0 || iMk<0 || iSks<0) return;
+
+  for(let r=1;r<data.length;r++){
+    const row=data[r]||[];
+    const kelas=clean(row[iKelas]);
+    const room=clean(row[iRoom]);
+    const mk=clean(row[iMk]);
+    const sks=clean(row[iSks]);
+    const semester=clean(row[iSemester]);
+
+    if(!kelas) continue;
+
+    const classKey=classLookupKey(kelas);
+
+    if(!CLASS_ROOM_SKS_MASTER[classKey]){
+      CLASS_ROOM_SKS_MASTER[classKey]={
+        kelas,
+        semester,
+        ruang:room,
+        courses:[]
+      };
+    }else if(room && !CLASS_ROOM_SKS_MASTER[classKey].ruang){
+      CLASS_ROOM_SKS_MASTER[classKey].ruang=room;
+    }
+
+    if(!mk) continue;
+
+    const item={
+      kelas,
+      semester,
+      mataKuliah:mk,
+      sks
+    };
+
+    CLASS_ROOM_SKS_MASTER[classKey].courses.push(item);
+
+    const courseKey=sourceCourseKey(mk);
+    COURSE_CLASS_MASTER[classKey+'|'+courseKey]=item;
+  }
+}
+
+/* Levenshtein dipakai hanya sebagai fallback apabila nama MK di
+   jadwal berbeda penulisan dengan nama MK pada sheet sumber. */
+function levenshtein(a,b){
+  a=String(a); b=String(b);
+  const dp=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));
+
+  for(let i=0;i<=a.length;i++) dp[i][0]=i;
+  for(let j=0;j<=b.length;j++) dp[0][j]=j;
+
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      dp[i][j]=Math.min(
+        dp[i-1][j]+1,
+        dp[i][j-1]+1,
+        dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1)
+      );
+    }
+  }
+
+  return dp[a.length][b.length];
+}
+
+function courseSimilarity(a,b){
+  a=sourceCourseKey(a);
+  b=sourceCourseKey(b);
+
+  if(!a || !b) return 0;
+  if(a===b) return 1;
+
+  if(a.includes(b) || b.includes(a)) return 0.92;
+
+  const at=new Set(a.split(' ').filter(x=>x.length>=2));
+  const bt=new Set(b.split(' ').filter(x=>x.length>=2));
+
+  let common=0;
+  at.forEach(x=>{if(bt.has(x)) common++;});
+
+  const union=new Set([...at,...bt]).size;
+  const tokenScore=union ? common/union : 0;
+
+  const maxLen=Math.max(a.length,b.length);
+  const editScore=maxLen
+    ? 1-(levenshtein(a,b)/maxLen)
+    : 0;
+
+  return Math.max(tokenScore,editScore*0.8);
+}
+
+function getSourceCourse(code,subject){
+  const classKey=classLookupKey(code);
+  const master=CLASS_ROOM_SKS_MASTER[classKey];
+
+  if(!master) return null;
+
+  const raw=clean(subject);
+  const normalized=sourceCourseKey(raw);
+
+  /* 1. Exact nama mata kuliah dari sheet sumber */
+  let found=master.courses.find(
+    x=>sourceCourseKey(x.mataKuliah)===normalized
+  );
+  if(found) return found;
+
+  /* 2. Alias langsung */
+  const alias=SOURCE_COURSE_ALIAS[normalize(raw)];
+  if(alias){
+    found=master.courses.find(
+      x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(alias)
+    );
+    if(found) return found;
+  }
+
+  /* 3. Nama lengkap hasil MK_MASTER lama */
+  const full=mkFullName(raw);
+  if(full && full!==raw){
+    found=master.courses.find(
+      x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(full)
+    );
+    if(found) return found;
+
+    const aliasFull=SOURCE_COURSE_ALIAS[normalize(full)];
+    if(aliasFull){
+      found=master.courses.find(
+        x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(aliasFull)
+      );
+      if(found) return found;
+    }
+  }
+
+  /* 4. Fuzzy matching sebagai pengaman terakhir */
+  let best=null;
+  let bestScore=0;
+
+  master.courses.forEach(item=>{
+    const score=Math.max(
+      courseSimilarity(raw,item.mataKuliah),
+      full ? courseSimilarity(full,item.mataKuliah) : 0,
+      alias ? courseSimilarity(alias,item.mataKuliah) : 0
+    );
+
+    if(score>bestScore){
+      bestScore=score;
+      best=item;
+    }
+  });
+
+  return bestScore>=0.58 ? best : null;
+}
+
+function getClassRoomFromSource(code){
+  const master=CLASS_ROOM_SKS_MASTER[classLookupKey(code)];
+  return master ? clean(master.ruang) : '';
+}
+
+function getRecordMeta(code,subject){
+  const source=getSourceCourse(code,subject);
+  const classMaster=CLASS_ROOM_SKS_MASTER[classLookupKey(code)];
+
+  return {
+    mataKuliah:source ? source.mataKuliah : mkFullName(subject),
+    sks:source ? source.sks : '',
+    ruang:source && source.kelas
+      ? getClassRoomFromSource(source.kelas)
+      : (classMaster ? clean(classMaster.ruang) : '')
+  };
+}
+
+function getSks(courseName,code=''){
+  if(code){
+    const source=getSourceCourse(code,courseName);
+    if(source) return source.sks;
+  }
+
+  return '';
+}
+
+function getCourseDisplayName(courseName,code=''){
+  if(code){
+    const source=getSourceCourse(code,courseName);
+    if(source) return source.mataKuliah;
+  }
+
+  return mkFullName(courseName);
 }
 
 function mkHtml(name){
@@ -737,8 +988,9 @@ function extractFlatSheet(sheet){
     if(!reg) continue;
 
     const rawSks=iSks>=0?clean(row[iSks]):'';
-    const sks=getSks(subject) || rawSks;
-    const room=iRoom>=0?clean(row[iRoom]):'';
+    const sourceMeta=getRecordMeta(code,subject);
+    const sks=sourceMeta.sks || rawSks;
+    const room=sourceMeta.ruang || (iRoom>=0?clean(row[iRoom]):'');
     const teacher=iKodeDosen>=0?clean(row[iKodeDosen]):'';
     const teacherName=iNamaDosen>=0?clean(row[iNamaDosen]):'';
     const day=iHari>=0?clean(row[iHari]):'';
@@ -750,7 +1002,7 @@ function extractFlatSheet(sheet){
       kodeKelas:code,
       kodeKelasSumber:rawClass,
       no:records.filter(x=>x.reg===reg && x.kodeKelas===code).length+1,
-      mataKuliah:subject,
+      mataKuliah:sourceMeta.mataKuliah || subject,
       sks,
       ruang:room,
       hari:day,
@@ -787,7 +1039,9 @@ function extractSheet(sheet,reg){
 
       const teacher=clean(data[r]?.[cls.col]);
       const subject=clean(data[r+1]?.[cls.col]);
-      const room=cls.roomCol!==null ? clean(data[r]?.[cls.roomCol]) : '';
+      const sourceMeta=getRecordMeta(cls.code,subject);
+      const room=sourceMeta.ruang ||
+        (cls.roomCol!==null ? clean(data[r]?.[cls.roomCol]) : '');
 
       if(!teacher && !subject && !room) continue;
 
@@ -799,8 +1053,8 @@ function extractSheet(sheet,reg){
         sheet,
         kodeKelas:cls.code,
         no:records.filter(x=>x.reg===reg && x.kodeKelas===cls.code).length+1,
-        mataKuliah:subject,
-        sks:getSks(subject),
+        mataKuliah:sourceMeta.mataKuliah || subject,
+        sks:sourceMeta.sks,
         ruang:room,
         hari:block.day,
         jamKe:block.slot,
@@ -815,6 +1069,11 @@ function extractSheet(sheet,reg){
 
 function loadAllData(){
   allRecords=[];
+
+  /* WAJIB: baca sheet sumber terlebih dahulu.
+     Setelah ini semua SKS + RUANG mengikuti sheet
+     "Data Kelas Ruangan dan SKS". */
+  loadClassRoomSksMaster();
 
   for(const sheet of workbook.SheetNames){
     const reg=regFromSheet(sheet);
@@ -1865,10 +2124,15 @@ excelFile.addEventListener('change',function(e){
       const countB=allRecords.filter(x=>x.reg==='Reg B').length;
       const countC=allRecords.filter(x=>x.reg==='Reg C').length;
 
+      const sourceLoaded=Object.keys(CLASS_ROOM_SKS_MASTER).length>0;
+
       fileStatus.innerHTML=`
-        <div class="success">
+        <div class="${sourceLoaded?'success':'error'}">
           File berhasil dibaca.
           Sumber jadwal: <b>${sourceSheets.join(', ')}</b>.
+          ${sourceLoaded
+            ? 'Patokan SKS + Ruang: <b>Data Kelas Ruangan dan SKS</b>.'
+            : '<br><b>PERINGATAN:</b> sheet Data Kelas Ruangan dan SKS tidak terbaca.'}
           Total <b>${allRecords.length}</b> baris jadwal.
           <br>
           Reg A: <b>${countA}</b> •
