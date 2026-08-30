@@ -36,7 +36,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .table-card{background:#fff;padding:25px;margin-bottom:28px;border-radius:18px;box-shadow:0 5px 20px rgba(0,0,0,.08);overflow-x:auto}
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px;flex-wrap:wrap}
 .toolbar h2{margin:0}
-.small{color:#6b7280}
+.small{color:#6b7280;line-height:1.55}
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse;min-width:1150px}
 th{background:#111827;color:#fff;padding:13px;text-align:center;position:sticky;top:0}
@@ -171,9 +171,9 @@ let displayedRecords=[];
 const DOSEN_MASTER={
   "IMAN":"Achmad Khusnul Iman, S.E., M.Ak.",
   "ACHMAD":"Achmad Khusnul Iman, S.E., M.Ak.",
-  "SUHERI":"Ahmad Syuheri, S.Ak., M.Ak.",
-  "ATA":"Akhmad Nofiata, S.E., M.Ak.",
-  "KHOLID":"Arif Wahyu Nur Kholid, S.Ak., M.Ak.",
+  "AHMAD":"Ahmad Syuheri, S.Ak., M.Ak.",
+  "AKHMAD":"Akhmad Nofiata, S.E., M.Ak.",
+  "ARIF":"Arif Wahyu Nur Kholid, S.Ak., M.Ak.",
   "ARIFATUN":"Arifatun Nasihah, S.Ak., M.Ak.",
   "AYU":"Ayu Septiana Putri, S.Ak., M.Ak.",
   "DIDIK":"Didik Setiawan, S.Ak., M.Ak.",
@@ -196,14 +196,14 @@ const DOSEN_MASTER={
   "RICHA":"Ricka Hidayati Chaniago, S.Ak., M.Ak.",
   "RIRIN":"Ririn Sari Dewi, S.E., M.Ak.",
   "RISMA":"Rismawati, S.E., M.Ak",
-  "RUPIANA":"Rupianna Tambunan, S.E., M.Ak",
+  "RUPIANNA":"Rupianna Tambunan, S.E., M.Ak",
   "SHALLY":"Shally Khomilah, S.E., M.Ak",
   "VANI":"Vani Vauliyanti, S.E., M.Ak.",
   "YAYAH":"Yayah Syahriyah, S.Ak., M.Ak.",
   "YUDHA":"Yudha Eka Febrian, S.E., M.Ak.",
   "YULI":"Yuliyanti, S.Pd., M.Pd",
   "KARINA":"Karina Elsani, S.Ak., M.Ak.",
-  "TYAS":"Tiyas Puji Utami, S.Ak., M.Ak."
+  "TIYAS":"Tiyas Puji Utami, S.Ak., M.Ak."
 };
 
 /* Alias tambahan supaya pencarian tetap menemukan kode Excel. */
@@ -664,6 +664,105 @@ function assignDayForBlocks(data,slotRows,reg){
   return result;
 }
 
+function cleanClassCode(v){
+  const s=clean(v);
+  // Format sumber baru: 01AKSP001 (02452) -> 01AKSP001
+  return s.replace(/\s*\([^)]*\)\s*$/,'').trim();
+}
+
+function normalizeHeader(v){
+  return clean(v).toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
+}
+
+function findHeaderRow(data){
+  const wanted=['KELAS','NAMA MATA KULIAH','RUANG','HARI','WAKTU KULIAH','KODE DOSEN','NAMA DOSEN','SHIFT'];
+  for(let r=0;r<Math.min(data.length,15);r++){
+    const vals=(data[r]||[]).map(normalizeHeader);
+    const hits=wanted.filter(x=>vals.includes(x)).length;
+    if(hits>=4) return r;
+  }
+  return -1;
+}
+
+function headerIndex(headers,...names){
+  for(const name of names){
+    const i=headers.indexOf(normalizeHeader(name));
+    if(i>=0) return i;
+  }
+  return -1;
+}
+
+function parseRegValue(v){
+  const s=normalize(v);
+  if(/REGULER A|REG A|^A$/.test(s)) return 'Reg A';
+  if(/REGULER B|REG B|^B$/.test(s)) return 'Reg B';
+  if(/REGULER C|REG C|REG CS|^C$|^CS$/.test(s)) return 'Reg C';
+  return null;
+}
+
+function extractFlatSheet(sheet){
+  const ws=workbook.Sheets[sheet];
+  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+  const hr=findHeaderRow(data);
+  if(hr<0) return [];
+
+  const headers=(data[hr]||[]).map(normalizeHeader);
+  const iKelas=headerIndex(headers,'KELAS');
+  const iMk=headerIndex(headers,'NAMA MATA KULIAH');
+  const iRoom=headerIndex(headers,'RUANG');
+  const iShift=headerIndex(headers,'SHIFT');
+  const iKodeDosen=headerIndex(headers,'KODE DOSEN');
+  const iNamaDosen=headerIndex(headers,'NAMA DOSEN');
+  const iHari=headerIndex(headers,'HARI');
+  const iWaktu=headerIndex(headers,'WAKTU KULIAH','WAKTU');
+  const iSks=headerIndex(headers,'SKS');
+
+  if(iKelas<0 || iMk<0) return [];
+
+  const records=[];
+  for(let r=hr+1;r<data.length;r++){
+    const row=data[r]||[];
+    const rawClass=clean(row[iKelas]);
+    const code=cleanClassCode(rawClass);
+    const subject=clean(row[iMk]);
+    if(!code || !subject) continue;
+
+    const reg=parseRegValue(iShift>=0?row[iShift]:'');
+    if(!reg) continue;
+
+    const rawSks=iSks>=0?clean(row[iSks]):'';
+    const sks=getSks(subject) || rawSks;
+    const room=iRoom>=0?clean(row[iRoom]):'';
+    const teacher=iKodeDosen>=0?clean(row[iKodeDosen]):'';
+    const teacherName=iNamaDosen>=0?clean(row[iNamaDosen]):'';
+    const day=iHari>=0?clean(row[iHari]):'';
+    const waktu=iWaktu>=0?clean(row[iWaktu]):'';
+
+    records.push({
+      reg,
+      sheet,
+      kodeKelas:code,
+      kodeKelasSumber:rawClass,
+      no:records.filter(x=>x.reg===reg && x.kodeKelas===code).length+1,
+      mataKuliah:subject,
+      sks,
+      ruang:room,
+      hari:day,
+      jamKe:clean(row[headers.indexOf('PERIODE MULAI KULIAH')]) || '',
+      waktu,
+      dosen:teacher || teacherName,
+      dosenNamaSumber:teacherName
+    });
+  }
+  return records;
+}
+
+function isFlatScheduleSheet(sheet){
+  const ws=workbook.Sheets[sheet];
+  const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+  return findHeaderRow(data)>=0;
+}
+
 function extractSheet(sheet,reg){
   const ws=workbook.Sheets[sheet];
   const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
@@ -713,8 +812,15 @@ function loadAllData(){
 
   for(const sheet of workbook.SheetNames){
     const reg=regFromSheet(sheet);
-    if(!reg) continue;
-    allRecords.push(...extractSheet(sheet,reg));
+    if(reg){
+      allRecords.push(...extractSheet(sheet,reg));
+      continue;
+    }
+
+    // Dukungan untuk file rekap satu tabel (KELAS, SHIFT, RUANG, HARI, WAKTU, dst.).
+    if(isFlatScheduleSheet(sheet)){
+      allRecords.push(...extractFlatSheet(sheet));
+    }
   }
 
   const seen=new Set();
@@ -770,35 +876,47 @@ function filteredByReg(){
     : allRecords.filter(x=>x.reg===reg);
 }
 
+function getClassRoom(code,reg){
+  const rooms=[...new Set(
+    allRecords.filter(x=>x.reg===reg && x.kodeKelas===code && clean(x.ruang))
+      .map(x=>clean(x.ruang))
+  )];
+  return rooms.join(' / ');
+}
+
+function classLabel(code,reg){
+  const room=getClassRoom(code,reg);
+  return room ? `${code} — Ruang ${room}` : code;
+}
+
 function populateClasses(){
-  const records=filteredByReg();
-
-  const codes=[
-    ...new Map(records.map(x=>[x.kodeKelas,x.kodeKelas])).values()
-  ];
-
-  codes.sort((a,b)=>
-    a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'})
-  );
-
   classSelect.innerHTML='';
 
-  const first=document.createElement('option');
-  first.value='ALL';
-  first.textContent='Semua Kelas';
-  classSelect.appendChild(first);
+  const reg=regSelect.value;
+  let records=allRecords;
+  if(reg!=='ALL') records=records.filter(x=>x.reg===reg);
 
-  codes.forEach(code=>{
+  const classes=[...new Set(records.map(x=>x.kodeKelas))].sort(
+    (a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'})
+  );
+
+  if(!classes.length){
+    classSelect.innerHTML='<option value="">Tidak ada kelas</option>';
+    classSelect.disabled=true;
+    return;
+  }
+
+  classSelect.innerHTML='<option value="">Pilih kode kelas</option>';
+  classes.forEach(code=>{
+    const regs=[...new Set(records.filter(x=>x.kodeKelas===code).map(x=>x.reg))];
+    const room=[...new Set(records.filter(x=>x.kodeKelas===code && clean(x.ruang)).map(x=>clean(x.ruang)))].join(' / ');
     const o=document.createElement('option');
     o.value=code;
-    o.textContent=code;
+    o.textContent=room ? `${code} — ${regs.join('/')} — Ruang ${room}` : `${code} — ${regs.join('/')}`;
     classSelect.appendChild(o);
   });
 
-  classSelect.disabled=false;
-
-  classStatus.innerHTML=
-    `<div class="info"><b>${codes.length}</b> kode kelas tersedia.</div>`;
+  classSelect.disabled=(modeSelect.value!=='single');
 }
 
 function populateDosen(){
@@ -975,6 +1093,8 @@ function displayNormal(records){
           <h2>${escapeHtml(reg.toUpperCase()+' '+code)}</h2>
           <div class="small">
             ${semester ? 'Semester '+semester+' • ' : ''}
+            <b>Kelas: ${escapeHtml(code)}</b> •
+            <b>Ruang: ${escapeHtml([...new Set(rows.map(x=>clean(x.ruang)).filter(Boolean))].join(' / ') || 'Belum diisi')}</b> •
             ${rows.length} mata kuliah •
             Tampilan dosen: <b>${nameMode.value==='full'?'Nama lengkap':'sesuai Excel'}</b>
           </div>
@@ -1204,6 +1324,7 @@ function displayDosen(){
       <div class="teacher-card">
         <h3>${escapeHtml(reg)} — ${escapeHtml(code)}</h3>
         <div class="teacher-meta">
+          <b>Ruang: ${escapeHtml([...new Set(rows.map(x=>clean(x.ruang)).filter(Boolean))].join(' / ') || 'Belum diisi')}</b> •
           <b>${classCourses.size} mata kuliah</b> • ${rows.length} jadwal
         </div>
 
@@ -1524,8 +1645,9 @@ async function downloadExcel(){
         ws.mergeCells(row,1,row,8);
         const title=ws.getCell(row,1);
 
+        const classRooms=[...new Set(classRows.map(x=>clean(x.ruang)).filter(Boolean))].join(' / ');
         title.value=
-          `${reg.toUpperCase()} ${code}`;
+          `${reg.toUpperCase()} ${code}${classRooms ? ' — RUANG ' + classRooms : ''}`;
 
         title.font={
           name:'Arial',
@@ -1730,6 +1852,8 @@ excelFile.addEventListener('change',function(e){
       loadAllData();
 
       const sheets=workbook.SheetNames.filter(s=>regFromSheet(s));
+      const flatSheets=workbook.SheetNames.filter(s=>!regFromSheet(s) && isFlatScheduleSheet(s));
+      const sourceSheets=[...sheets,...flatSheets];
 
       const countA=allRecords.filter(x=>x.reg==='Reg A').length;
       const countB=allRecords.filter(x=>x.reg==='Reg B').length;
@@ -1738,7 +1862,7 @@ excelFile.addEventListener('change',function(e){
       fileStatus.innerHTML=`
         <div class="success">
           File berhasil dibaca.
-          Sheet jadwal: <b>${sheets.join(', ')}</b>.
+          Sumber jadwal: <b>${sourceSheets.join(', ')}</b>.
           Total <b>${allRecords.length}</b> baris jadwal.
           <br>
           Reg A: <b>${countA}</b> •
