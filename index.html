@@ -413,6 +413,17 @@ function classLookupKey(v){
   return clean(v).toUpperCase().replace(/\s+/g,'').trim();
 }
 
+function normalizeCourseKey(v){
+  return clean(v)
+    .toUpperCase()
+    .replace(/&/g,' DAN ')
+    .replace(/[’']/g,'')
+    .replace(/[^A-Z0-9]+/g,' ')
+    .replace(/\\b(MATA KULIAH|MK)\\b/g,' ')
+    .replace(/\\s+/g,' ')
+    .trim();
+}
+
 function sourceCourseKey(v){
   return normalizeCourseKey(v);
 }
