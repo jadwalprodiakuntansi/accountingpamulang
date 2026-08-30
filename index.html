@@ -162,6 +162,7 @@ td.center{text-align:center}
 let workbook=null;
 let allRecords=[];
 let displayedRecords=[];
+let ROOM_MASTER={};
 
 /* =========================================================
    MASTER DOSEN
@@ -795,7 +796,7 @@ function extractSheet(sheet,reg){
         no:records.filter(x=>x.reg===reg && x.kodeKelas===cls.code).length+1,
         mataKuliah:subject,
         sks:getSks(subject),
-        ruang:room,
+        ruang:room || roomFromMaster(reg,cls.code),
         hari:block.day,
         jamKe:block.slot,
         waktu:timeMap[String(block.slot)] || '',
@@ -807,8 +808,108 @@ function extractSheet(sheet,reg){
   return records;
 }
 
+function baseClassCode(v){
+  return clean(v).replace(/\s*\([^)]*\)\s*$/,'').trim().toUpperCase();
+}
+
+function putRoom(reg,code,room){
+  const r=clean(room);
+  const c=clean(code);
+  if(!reg || !c || !r) return;
+  const key=reg+'|'+baseClassCode(c);
+  if(!ROOM_MASTER[key]) ROOM_MASTER[key]=[];
+  if(!ROOM_MASTER[key].includes(r)) ROOM_MASTER[key].push(r);
+}
+
+/*
+   Baca master ruang dari SEMUA bentuk Excel yang mungkin:
+   1) Format jadwal utama: kode kelas di satu kolom, RUANGAN di kolom sebelahnya.
+   2) Format tabel: kolom KODE KELAS + RUANG/RUANGAN.
+   3) Format rekap: judul kelas + header SEMESTER/NO/MATA KULIAH/SKS/RUANG/... .
+   Jadi kalau user menaruh data ruang di sheet lain, tetap bisa terbaca.
+*/
+function buildRoomMaster(){
+  ROOM_MASTER={};
+
+  for(const sheet of workbook.SheetNames){
+    const ws=workbook.Sheets[sheet];
+    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+
+    /* Tabel datar: cari header KODE KELAS + RUANG */
+    for(let hr=0;hr<Math.min(data.length,30);hr++){
+      const headers=(data[hr]||[]).map(normalizeHeader);
+      const iKelas=headers.findIndex(x=>['KODE KELAS','KELAS'].includes(x));
+      const iRoom=headers.findIndex(x=>['RUANG','RUANGAN'].includes(x));
+      const iReg=headers.findIndex(x=>['REGULER','REG','SHIFT'].includes(x));
+      if(iKelas<0 || iRoom<0) continue;
+
+      for(let r=hr+1;r<data.length;r++){
+        const row=data[r]||[];
+        const code=cleanClassCode(row[iKelas]);
+        const room=clean(row[iRoom]);
+        if(!isClassCode(code)) continue;
+
+        let reg=parseRegValue(iReg>=0?row[iReg]:'') || regFromSheet(sheet);
+        if(!reg){
+          const n=code.toUpperCase();
+          if(n.includes('AKSP')) reg='Reg A';
+          else if(n.includes('AKSM')) reg='Reg B';
+          else if(n.includes('AKSE')) reg='Reg C';
+        }
+        putRoom(reg,code,room);
+      }
+    }
+
+    /* Format utama: kode kelas di header, RUANGAN/RUANG di sebelahnya. */
+    const classCols=getClassColumns(data);
+    const sheetReg=regFromSheet(sheet);
+    if(sheetReg && classCols.length){
+      for(const cls of classCols){
+        if(cls.roomCol===null) continue;
+        for(let r=0;r<data.length;r++){
+          const room=clean(data[r]?.[cls.roomCol]);
+          if(room && !/^(ruangan|ruang)$/i.test(room)) putRoom(sheetReg,cls.code,room);
+        }
+      }
+    }
+
+    /* Rekap blok: judul "REGULER A 01AKSP001", lalu header yang punya RUANG. */
+    let activeReg=sheetReg;
+    let activeClass='';
+    for(let r=0;r<data.length;r++){
+      const row=data[r]||[];
+      const joined=row.map(clean).join(' ');
+      const m=joined.match(/REGULER\s+([ABC])\s+([^,\s]+)/i);
+      if(m){
+        activeReg='Reg '+m[1].toUpperCase();
+        activeClass=cleanClassCode(m[2]);
+        continue;
+      }
+      if(!activeClass || !activeReg) continue;
+
+      const headers=row.map(normalizeHeader);
+      const iRoom=headers.findIndex(x=>['RUANG','RUANGAN'].includes(x));
+      if(iRoom<0) continue;
+
+      for(let rr=r+1;rr<Math.min(r+30,data.length);rr++){
+        const rrw=data[rr]||[];
+        const room=clean(rrw[iRoom]);
+        if(room) putRoom(activeReg,activeClass,room);
+        if(rr>r+1 && rrw.some(v=>/^REGULER\s+[ABC]\s+/i.test(clean(v)))) break;
+      }
+    }
+  }
+}
+
+function roomFromMaster(reg,code){
+  const arr=ROOM_MASTER[reg+'|'+baseClassCode(code)]||[];
+  return arr.join(' / ');
+}
+
 function loadAllData(){
   allRecords=[];
+  ROOM_MASTER={};
+  buildRoomMaster();
 
   for(const sheet of workbook.SheetNames){
     const reg=regFromSheet(sheet);
@@ -817,14 +918,18 @@ function loadAllData(){
       continue;
     }
 
-    // Dukungan untuk file rekap satu tabel (KELAS, SHIFT, RUANG, HARI, WAKTU, dst.).
     if(isFlatScheduleSheet(sheet)){
       allRecords.push(...extractFlatSheet(sheet));
     }
   }
 
-  const seen=new Set();
+  /* Isi ruang dari master ruang bila parser utama menemukan kolom kosong. */
+  allRecords=allRecords.map(r=>({
+    ...r,
+    ruang:clean(r.ruang) || roomFromMaster(r.reg,r.kodeKelas)
+  }));
 
+  const seen=new Set();
   allRecords=allRecords.filter(x=>{
     const key=[
       x.reg,x.kodeKelas,x.hari,x.jamKe,
@@ -838,7 +943,6 @@ function loadAllData(){
 
   populateReg();
 }
-
 function populateReg(){
   regSelect.innerHTML='';
   const regs=['ALL','Reg A','Reg B','Reg C'];
