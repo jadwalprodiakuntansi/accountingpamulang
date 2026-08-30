@@ -431,8 +431,8 @@ function sourceCourseKey(v){
 /* Alias untuk nama singkat yang muncul di sheet jadwal.
    Nilai alias harus mengarah ke NAMA_MATA_KULIAH pada sheet sumber. */
 const SOURCE_COURSE_ALIAS={
-  "AGAMA":"Pendidikan Agama",
-  "PENDIDIKAN AGAMA":"Pendidikan Agama",
+  "AGAMA":"Agama Islam",
+  "PENDIDIKAN AGAMA":"Agama Islam",
   "PANCASILA":"Pancasila",
   "PENDIDIKAN PANCASILA":"Pancasila",
   "BASIC ENGLISH":"Basic English for International Communication",
@@ -863,21 +863,39 @@ function getTimeMap(data){
   const map={};
   const timeRe=/\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}/;
 
-  for(const row of data){
-    for(let c=0;c<row.length;c++){
-      const v=clean(row[c]);
-      const m=v.match(timeRe);
+  // Baca tabel jam dari sheet yang sedang diproses.
+  const scan=function(rows){
+    for(const row of rows){
+      for(let c=0;c<row.length;c++){
+        const v=clean(row[c]);
+        const m=v.match(timeRe);
 
-      if(m){
-        let jam='';
-        for(let k=Math.max(0,c-3);k<=c;k++){
-          const x=clean(row[k]);
-          if(/^\d+(\.0)?$/.test(x)) jam=String(parseInt(x,10));
+        if(m){
+          let jam='';
+          // Pada format Excel ini angka JAM KE berada di sekitar kolom waktu.
+          for(let k=Math.max(0,c-3);k<=c;k++){
+            const x=clean(row[k]);
+            if(/^\d+(\.0)?$/.test(x)) jam=String(parseInt(x,10));
+          }
+          if(jam) map[jam]=m[0].replace(/\s+/g,' ');
         }
-        if(jam) map[jam]=m[0].replace(/\s+/g,' ');
       }
     }
+  };
+
+  scan(data);
+
+  // Reg B dan Reg CS pada file ini tidak menyimpan teks WAKTU di sheetnya.
+  // Jadwal jamnya sama dengan Reg A, sehingga gunakan Reg A sebagai sumber
+  // waktu bersama. Tidak mengubah JAM KE atau data jadwal B/CS.
+  if(Object.keys(map).length===0 && workbook && workbook.Sheets && workbook.Sheets['Reg A']){
+    const regAData=XLSX.utils.sheet_to_json(
+      workbook.Sheets['Reg A'],
+      {header:1,defval:'',raw:false}
+    );
+    scan(regAData);
   }
+
   return map;
 }
 
