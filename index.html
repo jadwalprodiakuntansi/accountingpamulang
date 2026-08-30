@@ -419,8 +419,8 @@ function normalizeCourseKey(v){
     .replace(/&/g,' DAN ')
     .replace(/[’']/g,'')
     .replace(/[^A-Z0-9]+/g,' ')
-    .replace(/\\b(MATA KULIAH|MK)\\b/g,' ')
-    .replace(/\\s+/g,' ')
+    .replace(/\b(MATA KULIAH|MK)\b/g,' ')
+    .replace(/\s+/g,' ')
     .trim();
 }
 
@@ -656,62 +656,55 @@ function courseSimilarity(a,b){
 function getSourceCourse(code,subject){
   const classKey=classLookupKey(code);
   const master=CLASS_ROOM_SKS_MASTER[classKey];
-
-  if(!master) return null;
+  if(!master || !master.courses || !master.courses.length) return null;
 
   const raw=clean(subject);
-  const normalized=sourceCourseKey(raw);
+  if(!raw) return null;
 
-  /* 1. Exact nama mata kuliah dari sheet sumber */
-  let found=master.courses.find(
-    x=>sourceCourseKey(x.mataKuliah)===normalized
-  );
-  if(found) return found;
+  const keys=[];
+  const addKey=v=>{
+    const k=sourceCourseKey(v);
+    if(k && !keys.includes(k)) keys.push(k);
+  };
 
-  /* 2. Alias langsung */
+  addKey(raw);
+
   const alias=SOURCE_COURSE_ALIAS[normalize(raw)];
-  if(alias){
-    found=master.courses.find(
-      x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(alias)
-    );
-    if(found) return found;
-  }
+  if(alias) addKey(alias);
 
-  /* 3. Nama lengkap hasil MK_MASTER lama */
   const full=mkFullName(raw);
-  if(full && full!==raw){
-    found=master.courses.find(
-      x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(full)
-    );
-    if(found) return found;
+  if(full) addKey(full);
 
-    const aliasFull=SOURCE_COURSE_ALIAS[normalize(full)];
-    if(aliasFull){
-      found=master.courses.find(
-        x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(aliasFull)
-      );
-      if(found) return found;
-    }
+  // Index exact: paling akurat dan tidak tergantung fuzzy.
+  for(const k of keys){
+    const indexed=COURSE_CLASS_MASTER[classKey+'|'+k];
+    if(indexed && clean(indexed.sks)!=='') return indexed;
   }
 
-  /* 4. Fuzzy matching sebagai pengaman terakhir */
+  // Exact scan terhadap data sumber.
+  for(const k of keys){
+    const found=master.courses.find(x=>sourceCourseKey(x.mataKuliah)===k);
+    if(found && clean(found.sks)!=='') return found;
+  }
+
+  // Fallback fuzzy, tetapi hanya menerima hasil yang punya SKS.
   let best=null;
   let bestScore=0;
-
   master.courses.forEach(item=>{
-    const score=Math.max(
-      courseSimilarity(raw,item.mataKuliah),
-      full ? courseSimilarity(full,item.mataKuliah) : 0,
-      alias ? courseSimilarity(alias,item.mataKuliah) : 0
-    );
-
+    if(clean(item.sks)==='') return;
+    const candidates=[item.mataKuliah];
+    const itemKey=sourceCourseKey(item.mataKuliah);
+    const score=Math.max(...keys.map(k=>{
+      if(k===itemKey) return 1;
+      return courseSimilarity(k,itemKey);
+    }));
     if(score>bestScore){
       bestScore=score;
       best=item;
     }
   });
 
-  return bestScore>=0.58 ? best : null;
+  return bestScore>=0.70 ? best : null;
 }
 
 function getClassRoomFromSource(code){
@@ -720,15 +713,16 @@ function getClassRoomFromSource(code){
 }
 
 function getRecordMeta(code,subject){
+  const classKey=classLookupKey(code);
   const source=getSourceCourse(code,subject);
-  const classMaster=CLASS_ROOM_SKS_MASTER[classLookupKey(code)];
+  const classMaster=CLASS_ROOM_SKS_MASTER[classKey];
 
+  // SKS dan nama MK HARUS berasal dari sheet Data Kelas Ruangan dan SKS.
+  // Ruangan juga diambil dari master tersebut; schedule hanya jadi fallback.
   return {
     mataKuliah:source ? source.mataKuliah : mkFullName(subject),
-    sks:source ? source.sks : '',
-    ruang:source && source.kelas
-      ? getClassRoomFromSource(source.kelas)
-      : (classMaster ? clean(classMaster.ruang) : '')
+    sks:source ? clean(source.sks) : '',
+    ruang:classMaster ? clean(classMaster.ruang) : ''
   };
 }
 
@@ -1000,7 +994,7 @@ function extractFlatSheet(sheet){
 
     const rawSks=iSks>=0?clean(row[iSks]):'';
     const sourceMeta=getRecordMeta(code,subject);
-    const sks=sourceMeta.sks || rawSks;
+    const sks=sourceMeta.sks;
     const room=sourceMeta.ruang || (iRoom>=0?clean(row[iRoom]):'');
     const teacher=iKodeDosen>=0?clean(row[iKodeDosen]):'';
     const teacherName=iNamaDosen>=0?clean(row[iNamaDosen]):'';
@@ -1053,6 +1047,7 @@ function extractSheet(sheet,reg){
       const sourceMeta=getRecordMeta(cls.code,subject);
       const room=sourceMeta.ruang ||
         (cls.roomCol!==null ? clean(data[r]?.[cls.roomCol]) : '');
+      const sks=sourceMeta.sks;
 
       if(!teacher && !subject && !room) continue;
 
@@ -1065,7 +1060,7 @@ function extractSheet(sheet,reg){
         kodeKelas:cls.code,
         no:records.filter(x=>x.reg===reg && x.kodeKelas===cls.code).length+1,
         mataKuliah:sourceMeta.mataKuliah || subject,
-        sks:sourceMeta.sks,
+        sks:sks,
         ruang:room,
         hari:block.day,
         jamKe:block.slot,
