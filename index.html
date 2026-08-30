@@ -729,10 +729,40 @@ function getRecordMeta(code,subject){
 function getSks(courseName,code=''){
   if(code){
     const source=getSourceCourse(code,courseName);
-    if(source) return source.sks;
+    if(source && clean(source.sks)!=='') return clean(source.sks);
   }
-
   return '';
+}
+
+/* =========================================================
+   WAKTU FINAL PER REGULER
+   Reg A: jadwal lama dipertahankan.
+   Reg B: jam malam sesuai ketentuan.
+   Reg C: jam pagi-siang sesuai ketentuan.
+   ========================================================= */
+const REG_TIME_MAP={
+  'Reg A':{
+    '1':'07.10 - 08.50',
+    '2':'08.50 - 10.30',
+    '3':'10.30 - 12.10',
+    '4':'13.00 - 14.40',
+    '5':'14.40 - 16.30'
+  },
+  'Reg B':{
+    '1':'18.20 - 20.00',
+    '2':'20.00 - 21.40'
+  },
+  'Reg C':{
+    '1':'07.40 - 09.20',
+    '2':'09.20 - 11.00',
+    '3':'11.00 - 13.50',
+    '4':'13.50 - 15.30'
+  }
+};
+
+function getRecordWaktu(record){
+  const map=REG_TIME_MAP[record.reg] || {};
+  return clean(map[String(record.jamKe)]) || clean(record.waktu);
 }
 
 function getCourseDisplayName(courseName,code=''){
@@ -860,33 +890,18 @@ function findRegCMarkers(data){
 }
 
 function getTimeMap(data, reg){
-  // =========================================================
-  // MASTER WAKTU PER REGULER
-  // Reg A mengikuti waktu yang tertulis di Excel.
-  // Reg B dan Reg C memakai jadwal waktu khusus berikut.
-  // =========================================================
-  const REG_TIME_MAP={
-    'Reg B':{
-      '1':'18.20 - 20.00',
-      '2':'20.00 - 21.40'
-    },
-    'Reg C':{
-      '1':'07.40 - 09.20',
-      '2':'09.20 - 11.00',
-      '3':'11.00 - 13.50',
-    '4':'13.50 - 15.30'
-    }
-  };
-
-  // Reg B dan Reg C HARUS menggunakan jam khusus di atas.
-  // Jangan mengambil waktu Reg A untuk keduanya.
+  /*
+     Reg B dan Reg C wajib memakai jam khusus.
+     Reg A memakai patokan Reg A yang sudah digunakan sebelumnya.
+     Jika suatu saat sheet Excel menyediakan teks waktu sendiri,
+     waktu dari Excel dipakai sebagai fallback untuk Reg A.
+  */
   if(REG_TIME_MAP[reg]) return {...REG_TIME_MAP[reg]};
 
-  // Reg A: baca waktu langsung dari sheet Reg A.
   const map={};
   const timeRe=/\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}/;
 
-  for(const row of data){
+  for(const row of data || []){
     for(let c=0;c<row.length;c++){
       const v=clean(row[c]);
       const m=v.match(timeRe);
@@ -1128,6 +1143,13 @@ function loadAllData(){
     seen.add(key);
     return true;
   });
+
+  /* Pastikan WAKTU tidak pernah hilang hanya karena sheet sumber
+     tidak menuliskan teks jam. Waktu selalu diturunkan dari REG + JAM KE. */
+  allRecords=allRecords.map(r=>({
+    ...r,
+    waktu:getRecordWaktu(r)
+  }));
 
   populateReg();
 }
@@ -2003,12 +2025,12 @@ async function downloadExcel(){
 
         const values=classRows.map((x,i)=>[
           i+1,
-          mkFullName(x.mataKuliah),
-          getSks(x.mataKuliah),
+          x.mataKuliah || mkFullName(x.mataKuliah),
+          getSks(x.mataKuliah,x.kodeKelas) || clean(x.sks),
           x.ruang,
           x.hari,
           x.jamKe,
-          x.waktu,
+          getRecordWaktu(x),
           teacherDisplay(x.dosen)
         ]);
 
