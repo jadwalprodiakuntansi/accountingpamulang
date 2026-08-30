@@ -419,8 +419,8 @@ function normalizeCourseKey(v){
     .replace(/&/g,' DAN ')
     .replace(/[’']/g,'')
     .replace(/[^A-Z0-9]+/g,' ')
-    .replace(/\b(MATA KULIAH|MK)\b/g,' ')
-    .replace(/\s+/g,' ')
+    .replace(/\\b(MATA KULIAH|MK)\\b/g,' ')
+    .replace(/\\s+/g,' ')
     .trim();
 }
 
@@ -557,7 +557,24 @@ function loadClassRoomSksMaster(){
 
   if(!data.length) return;
 
-  const headers=(data[0]||[]).map(normalizeHeader);
+  // Header master tidak harus berada di baris pertama. Cari baris yang
+  // benar-benar berisi KELAS + RUANG + MATA KULIAH + SKS.
+  let headerRow=-1;
+  for(let r=0;r<Math.min(data.length,30);r++){
+    const h=(data[r]||[]).map(normalizeHeader);
+    const hasK=headerIndex(h,'KELAS')>=0;
+    const hasR=headerIndex(h,'RUANG','RUANGAN')>=0;
+    const hasM=headerIndex(h,'MATA_KULIAH','MATA KULIAH')>=0;
+    const hasS=headerIndex(h,'SKS')>=0;
+    if(hasK && hasR && hasM && hasS){
+      headerRow=r;
+      break;
+    }
+  }
+
+  if(headerRow<0) return;
+
+  const headers=(data[headerRow]||[]).map(normalizeHeader);
   const iKelas=headerIndex(headers,'KELAS');
   const iSemester=headerIndex(headers,'SEMESTER');
   const iRoom=headerIndex(headers,'RUANG','RUANGAN');
@@ -566,7 +583,7 @@ function loadClassRoomSksMaster(){
 
   if(iKelas<0 || iRoom<0 || iMk<0 || iSks<0) return;
 
-  for(let r=1;r<data.length;r++){
+  for(let r=headerRow+1;r<data.length;r++){
     const row=data[r]||[];
     const kelas=clean(row[iKelas]);
     const room=clean(row[iRoom]);
@@ -656,55 +673,62 @@ function courseSimilarity(a,b){
 function getSourceCourse(code,subject){
   const classKey=classLookupKey(code);
   const master=CLASS_ROOM_SKS_MASTER[classKey];
-  if(!master || !master.courses || !master.courses.length) return null;
+
+  if(!master) return null;
 
   const raw=clean(subject);
-  if(!raw) return null;
+  const normalized=sourceCourseKey(raw);
 
-  const keys=[];
-  const addKey=v=>{
-    const k=sourceCourseKey(v);
-    if(k && !keys.includes(k)) keys.push(k);
-  };
+  /* 1. Exact nama mata kuliah dari sheet sumber */
+  let found=master.courses.find(
+    x=>sourceCourseKey(x.mataKuliah)===normalized
+  );
+  if(found) return found;
 
-  addKey(raw);
-
+  /* 2. Alias langsung */
   const alias=SOURCE_COURSE_ALIAS[normalize(raw)];
-  if(alias) addKey(alias);
+  if(alias){
+    found=master.courses.find(
+      x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(alias)
+    );
+    if(found) return found;
+  }
 
+  /* 3. Nama lengkap hasil MK_MASTER lama */
   const full=mkFullName(raw);
-  if(full) addKey(full);
+  if(full && full!==raw){
+    found=master.courses.find(
+      x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(full)
+    );
+    if(found) return found;
 
-  // Index exact: paling akurat dan tidak tergantung fuzzy.
-  for(const k of keys){
-    const indexed=COURSE_CLASS_MASTER[classKey+'|'+k];
-    if(indexed && clean(indexed.sks)!=='') return indexed;
+    const aliasFull=SOURCE_COURSE_ALIAS[normalize(full)];
+    if(aliasFull){
+      found=master.courses.find(
+        x=>sourceCourseKey(x.mataKuliah)===sourceCourseKey(aliasFull)
+      );
+      if(found) return found;
+    }
   }
 
-  // Exact scan terhadap data sumber.
-  for(const k of keys){
-    const found=master.courses.find(x=>sourceCourseKey(x.mataKuliah)===k);
-    if(found && clean(found.sks)!=='') return found;
-  }
-
-  // Fallback fuzzy, tetapi hanya menerima hasil yang punya SKS.
+  /* 4. Fuzzy matching sebagai pengaman terakhir */
   let best=null;
   let bestScore=0;
+
   master.courses.forEach(item=>{
-    if(clean(item.sks)==='') return;
-    const candidates=[item.mataKuliah];
-    const itemKey=sourceCourseKey(item.mataKuliah);
-    const score=Math.max(...keys.map(k=>{
-      if(k===itemKey) return 1;
-      return courseSimilarity(k,itemKey);
-    }));
+    const score=Math.max(
+      courseSimilarity(raw,item.mataKuliah),
+      full ? courseSimilarity(full,item.mataKuliah) : 0,
+      alias ? courseSimilarity(alias,item.mataKuliah) : 0
+    );
+
     if(score>bestScore){
       bestScore=score;
       best=item;
     }
   });
 
-  return bestScore>=0.70 ? best : null;
+  return bestScore>=0.58 ? best : null;
 }
 
 function getClassRoomFromSource(code){
@@ -713,56 +737,25 @@ function getClassRoomFromSource(code){
 }
 
 function getRecordMeta(code,subject){
-  const classKey=classLookupKey(code);
   const source=getSourceCourse(code,subject);
-  const classMaster=CLASS_ROOM_SKS_MASTER[classKey];
+  const classMaster=CLASS_ROOM_SKS_MASTER[classLookupKey(code)];
 
-  // SKS dan nama MK HARUS berasal dari sheet Data Kelas Ruangan dan SKS.
-  // Ruangan juga diambil dari master tersebut; schedule hanya jadi fallback.
   return {
     mataKuliah:source ? source.mataKuliah : mkFullName(subject),
-    sks:source ? clean(source.sks) : '',
-    ruang:classMaster ? clean(classMaster.ruang) : ''
+    sks:source ? source.sks : '',
+    ruang:source && source.kelas
+      ? getClassRoomFromSource(source.kelas)
+      : (classMaster ? clean(classMaster.ruang) : '')
   };
 }
 
 function getSks(courseName,code=''){
   if(code){
     const source=getSourceCourse(code,courseName);
-    if(source && clean(source.sks)!=='') return clean(source.sks);
+    if(source) return source.sks;
   }
+
   return '';
-}
-
-/* =========================================================
-   WAKTU FINAL PER REGULER
-   Reg A: jadwal lama dipertahankan.
-   Reg B: jam malam sesuai ketentuan.
-   Reg C: jam pagi-siang sesuai ketentuan.
-   ========================================================= */
-const REG_TIME_MAP={
-  'Reg A':{
-    '1':'07.10 - 08.50',
-    '2':'08.50 - 10.30',
-    '3':'10.30 - 12.10',
-    '4':'13.00 - 14.40',
-    '5':'14.40 - 16.30'
-  },
-  'Reg B':{
-    '1':'18.20 - 20.00',
-    '2':'20.00 - 21.40'
-  },
-  'Reg C':{
-    '1':'07.40 - 09.20',
-    '2':'09.20 - 11.00',
-    '3':'11.00 - 13.50',
-    '4':'13.50 - 15.30'
-  }
-};
-
-function getRecordWaktu(record){
-  const map=REG_TIME_MAP[record.reg] || {};
-  return clean(map[String(record.jamKe)]) || clean(record.waktu);
 }
 
 function getCourseDisplayName(courseName,code=''){
@@ -889,22 +882,16 @@ function findRegCMarkers(data){
   return markers;
 }
 
-function getTimeMap(data, reg){
-  /*
-     Reg B dan Reg C wajib memakai jam khusus.
-     Reg A memakai patokan Reg A yang sudah digunakan sebelumnya.
-     Jika suatu saat sheet Excel menyediakan teks waktu sendiri,
-     waktu dari Excel dipakai sebagai fallback untuk Reg A.
-  */
-  if(REG_TIME_MAP[reg]) return {...REG_TIME_MAP[reg]};
-
+function getTimeMap(data,reg){
   const map={};
   const timeRe=/\d{1,2}[.:]\d{2}\s*[-–]\s*\d{1,2}[.:]\d{2}/;
 
-  for(const row of data || []){
+  // Pertahankan waktu yang memang tertulis di sheet sumber.
+  for(const row of data){
     for(let c=0;c<row.length;c++){
       const v=clean(row[c]);
       const m=v.match(timeRe);
+
       if(m){
         let jam='';
         for(let k=Math.max(0,c-3);k<=c;k++){
@@ -915,6 +902,33 @@ function getTimeMap(data, reg){
       }
     }
   }
+
+  // Patokan resmi jika sheet jadwal tidak menyimpan kolom waktu.
+  const fixed={
+    'Reg A':{
+      '1':'07.10 - 08.50',
+      '2':'08.50 - 10.30',
+      '3':'10.30 - 12.10',
+      '4':'13.00 - 14.40',
+      '5':'14.40 - 16.30'
+    },
+    'Reg B':{
+      '1':'18.20 - 20.00',
+      '2':'20.00 - 21.40'
+    },
+    'Reg C':{
+      '1':'07.40 - 09.20',
+      '2':'09.20 - 11.00',
+      '3':'11.00 - 13.50',
+      '4':'13.50 - 15.30'
+    }
+  };
+
+  const fallback=fixed[reg]||{};
+  Object.keys(fallback).forEach(k=>{
+    if(!map[k]) map[k]=fallback[k];
+  });
+
   return map;
 }
 
@@ -1031,7 +1045,7 @@ function extractFlatSheet(sheet){
 
     const rawSks=iSks>=0?clean(row[iSks]):'';
     const sourceMeta=getRecordMeta(code,subject);
-    const sks=sourceMeta.sks;
+    const sks=sourceMeta.sks || rawSks;
     const room=sourceMeta.ruang || (iRoom>=0?clean(row[iRoom]):'');
     const teacher=iKodeDosen>=0?clean(row[iKodeDosen]):'';
     const teacherName=iNamaDosen>=0?clean(row[iNamaDosen]):'';
@@ -1084,7 +1098,6 @@ function extractSheet(sheet,reg){
       const sourceMeta=getRecordMeta(cls.code,subject);
       const room=sourceMeta.ruang ||
         (cls.roomCol!==null ? clean(data[r]?.[cls.roomCol]) : '');
-      const sks=sourceMeta.sks;
 
       if(!teacher && !subject && !room) continue;
 
@@ -1097,7 +1110,7 @@ function extractSheet(sheet,reg){
         kodeKelas:cls.code,
         no:records.filter(x=>x.reg===reg && x.kodeKelas===cls.code).length+1,
         mataKuliah:sourceMeta.mataKuliah || subject,
-        sks:sks,
+        sks:sourceMeta.sks,
         ruang:room,
         hari:block.day,
         jamKe:block.slot,
@@ -1143,13 +1156,6 @@ function loadAllData(){
     seen.add(key);
     return true;
   });
-
-  /* Pastikan WAKTU tidak pernah hilang hanya karena sheet sumber
-     tidak menuliskan teks jam. Waktu selalu diturunkan dari REG + JAM KE. */
-  allRecords=allRecords.map(r=>({
-    ...r,
-    waktu:getRecordWaktu(r)
-  }));
 
   populateReg();
 }
@@ -1882,6 +1888,35 @@ function showData(){
    - Auto filter/table Excel.
    - Nama dosen mengikuti pilihan Nama Lengkap / Sesuai Excel.
    ========================================================= */
+function getRecordWaktu(record){
+  const existing=clean(record.waktu);
+  if(existing) return existing;
+
+  const reg=record.reg;
+  const jam=clean(record.jamKe);
+  const fixed={
+    'Reg A':{
+      '1':'07.10 - 08.50',
+      '2':'08.50 - 10.30',
+      '3':'10.30 - 12.10',
+      '4':'13.00 - 14.40',
+      '5':'14.40 - 16.30'
+    },
+    'Reg B':{
+      '1':'18.20 - 20.00',
+      '2':'20.00 - 21.40'
+    },
+    'Reg C':{
+      '1':'07.40 - 09.20',
+      '2':'09.20 - 11.00',
+      '3':'11.00 - 13.50',
+      '4':'13.50 - 15.30'
+    }
+  };
+
+  return fixed[reg]?.[jam] || '';
+}
+
 async function downloadExcel(){
   if(!displayedRecords.length) return;
 
@@ -2025,9 +2060,9 @@ async function downloadExcel(){
 
         const values=classRows.map((x,i)=>[
           i+1,
-          x.mataKuliah || mkFullName(x.mataKuliah),
+          getCourseDisplayName(x.mataKuliah,x.kodeKelas),
           getSks(x.mataKuliah,x.kodeKelas) || clean(x.sks),
-          x.ruang,
+          clean(x.ruang) || getClassRoomFromSource(x.kodeKelas),
           x.hari,
           x.jamKe,
           getRecordWaktu(x),
@@ -2093,6 +2128,19 @@ async function downloadExcel(){
 
         row=startTableRow+values.length+3;
       });
+    }
+
+    // Sertakan salinan sheet master agar file hasil download tetap bisa
+    // di-upload kembali tanpa kehilangan patokan SKS + Ruang.
+    const masterSheetName=workbook.SheetNames.find(
+      s=>normalize(s)==='DATA KELAS RUANGAN DAN SKS'
+    );
+    if(masterSheetName){
+      const src=workbook.Sheets[masterSheetName];
+      const masterData=XLSX.utils.sheet_to_json(src,{header:1,defval:'',raw:false});
+      const mw=out.addWorksheet('Data Kelas Ruangan dan SKS');
+      masterData.forEach(rowData=>mw.addRow(rowData));
+      mw.state='hidden';
     }
 
     const safeReg=
@@ -2175,14 +2223,17 @@ excelFile.addEventListener('change',function(e){
       const countC=allRecords.filter(x=>x.reg==='Reg C').length;
 
       const sourceLoaded=Object.keys(CLASS_ROOM_SKS_MASTER).length>0;
+      const hasScheduleRows=allRecords.length>0;
 
       fileStatus.innerHTML=`
-        <div class="${sourceLoaded?'success':'error'}">
+        <div class="${(sourceLoaded||hasScheduleRows)?'success':'error'}">
           File berhasil dibaca.
           Sumber jadwal: <b>${sourceSheets.join(', ')}</b>.
           ${sourceLoaded
             ? 'Patokan SKS + Ruang: <b>Data Kelas Ruangan dan SKS</b>.'
-            : '<br><b>PERINGATAN:</b> sheet Data Kelas Ruangan dan SKS tidak terbaca.'}
+            : hasScheduleRows
+              ? 'File rekap sudah memiliki SKS + Ruang sehingga tetap bisa diproses.'
+              : '<br><b>PERINGATAN:</b> data jadwal tidak terbaca.'}
           Total <b>${allRecords.length}</b> baris jadwal.
           <br>
           Reg A: <b>${countA}</b> •
